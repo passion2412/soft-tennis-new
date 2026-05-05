@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v4", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -14,50 +14,53 @@ html_code = """
         body { font-family: -apple-system, sans-serif; background: white; padding: 2px; margin: 0; }
         
         /* スコアボード */
-        .score-box { background: #1a1a1a; color: white; border-radius: 8px; text-align: center; padding: 8px; margin-bottom: 6px; position: relative; }
-        .main-score { font-size: 42px; font-weight: 900; line-height: 1; margin: 2px 0; }
-        .game-score { font-size: 16px; color: #4CAF50; font-weight: bold; }
-        .names-display { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+        .score-box { background: #1a1a1a; color: white; border-radius: 8px; text-align: center; padding: 12px 8px; margin-bottom: 6px; position: relative; }
+        .main-score { font-size: 48px; font-weight: 900; line-height: 1; margin: 5px 0; }
+        .game-score { font-size: 18px; color: #4CAF50; font-weight: bold; }
+        .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
         
-        /* 1st確率表示 (白文字・本数付き) */
-        .srv-mini { position: absolute; font-size: 10px; color: white; font-weight: bold; top: 8px; }
-        #srv-p1-mini { left: 10px; text-align: left; }
-        #srv-p2-mini { right: 10px; text-align: right; }
+        /* サーブ確率表示を大きく */
+        .srv-mini { position: absolute; font-size: 14px; color: white; font-weight: bold; top: 12px; line-height: 1.2; }
+        #srv-p1-mini { left: 12px; text-align: left; }
+        #srv-p2-mini { right: 12px; text-align: right; }
 
         .player-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-        .p-btn { border: 1.5px solid #E67E22; background: white; color: #E67E22; padding: 8px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 13px; }
+        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 14px; }
         .p-btn.active { background: #E67E22; color: white; }
 
         .serve-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
-        .s-btn { height: 34px; border-radius: 17px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .s-btn { height: 38px; border-radius: 19px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-        .btn { height: 42px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 11px; border: none; cursor: pointer; }
+        /* ボタンガイド（得点・失点） */
+        .label-grid { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
+        .label-win { color: #007AFF; }
+        .label-loss { color: #FF3B30; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+        .btn { height: 44px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
         .btn-win { background-color: #007AFF; }
         .btn-loss { background-color: #FF3B30; }
 
-        /* 戻るボタンの強調 */
-        .undo-btn { background: #666; color: white; border: none; padding: 10px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; }
 
-        /* Match Report (スクショ用) */
+        /* Match Report */
         .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; width: 100%; box-sizing: border-box; }
-        .report-title { font-size: 13px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 6px; border-radius: 6px 6px 0 0; text-align: center; }
-        .rep-match-name { font-size: 12px; font-weight: bold; text-align: center; color: #444; margin-bottom: 4px; }
-        
+        .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
+        .rep-match-name { font-size: 13px; font-weight: bold; text-align: center; color: #444; margin-bottom: 5px; }
         .final-score-rep { text-align:center; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 8px; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 10px; }
-        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; }
         th { background: #f4f4f4; }
         
-        .memo-box { font-size: 10px; background: #f9f9f9; padding: 6px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ccc; white-space: pre-wrap; }
+        .memo-box { font-size: 11px; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ccc; white-space: pre-wrap; }
         .history-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
-        .history-item { border: 1px solid #333; border-radius: 3px; padding: 2px 6px; font-size: 10px; font-weight: bold; background: #eee; }
+        .history-item { border: 1px solid #333; border-radius: 3px; padding: 3px 8px; font-size: 11px; font-weight: bold; background: #eee; }
 
-        details { margin-top: 20px; padding: 10px; font-size: 12px; color: #666; }
-        input, textarea { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        details { margin-top: 25px; padding: 10px; font-size: 13px; color: #666; border: 1px solid #eee; }
+        input, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -81,20 +84,23 @@ html_code = """
             <button class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
 
+        <div class="label-grid">
+            <div class="label-win">得点</div>
+            <div class="label-loss">失点</div>
+        </div>
         <div class="grid" id="button-area"></div>
         <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
     </div>
 
-    <hr style="border: 1px dashed #ccc; margin: 20px 0;">
+    <hr style="border: 1px dashed #ccc; margin: 25px 0;">
 
-    <!-- MATCH REPORT Area -->
     <div class="report-card" id="screenshot-area">
         <div class="report-title">MATCH REPORT</div>
         <div id="rep-match-name" class="rep-match-name">未設定の試合</div>
         
         <div class="final-score-rep">
-            <div id="final-gms" style="font-size:28px; font-weight: 900; color:#d32f2f;">0 — 0</div>
-            <div id="final-names" style="font-size:11px; font-weight: bold;">自分 & ペア vs 相手</div>
+            <div id="final-gms" style="font-size:32px; font-weight: 900; color:#d32f2f;">0 — 0</div>
+            <div id="final-names" style="font-size:12px; font-weight: bold;">自分 & ペア vs 相手</div>
         </div>
 
         <table>
@@ -112,13 +118,13 @@ html_code = """
     </div>
 
     <details>
-        <summary>⚙️ 試合名・選手名・メモ・リセット</summary>
-        <input type="text" id="in-match" placeholder="試合名 (例: 大会 1回戦)" oninput="updateSettings()">
+        <summary>⚙️ 試合設定・リセット</summary>
+        <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
         <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
-        <textarea id="in-memo" rows="3" placeholder="試合のメモ (例: 相手はバックが弱い)" oninput="updateSettings()"></textarea>
-        <button onclick="location.reload()" style="background:#f44336; color:white; width:100%; padding:10px; border:none; border-radius:4px; margin-top:10px; font-weight:bold;">データを全消去</button>
+        <textarea id="in-memo" rows="3" placeholder="メモ" oninput="updateSettings()"></textarea>
+        <button onclick="location.reload()" style="background:#f44336; color:white; width:100%; padding:12px; border:none; border-radius:4px; margin-top:10px; font-weight:bold;">全消去</button>
     </details>
 
     <script>
@@ -196,9 +202,11 @@ html_code = """
             document.getElementById('tag1').className = state.active==1 ? 'p-btn active' : 'p-btn';
             document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
             
-            document.getElementById('srv-p1-mini').innerHTML = "1st: " + getSrvText('p1').replace(' ', '<br>');
-            document.getElementById('srv-p2-mini').innerHTML = "1st: " + getSrvText('p2').replace(' ', '<br>');
+            // スコアボード内確率 (大きく表示)
+            document.getElementById('srv-p1-mini').innerHTML = "1st: " + getSrvText('p1').split(' ')[0] + "<br>" + getSrvText('p1').split(' ')[1];
+            document.getElementById('srv-p2-mini').innerHTML = "1st: " + getSrvText('p2').split(' ')[0] + "<br>" + getSrvText('p2').split(' ')[1];
 
+            // レポート
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
@@ -207,9 +215,11 @@ html_code = """
             document.getElementById('rep-memo').innerText = state.memo;
 
             document.getElementById('stats-head').innerHTML = "<tr><th style='width:40%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th></tr>";
+            
+            // 全ての項目をレポートに表示
+            var reportItems = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', '相手のミス', 'ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス', '相手のエース'];
             var rows = "";
-            [...wins, ...loss].forEach(function(s){
-                if(s === '相手のエース' || s === '相手のミス') return;
+            reportItems.forEach(function(s){
                 rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>";
             });
             document.getElementById('stats-body').innerHTML = rows;
@@ -224,4 +234,4 @@ html_code = """
 </html>
 """
 
-components.html(html_code, height=1400, scrolling=True)
+components.html(html_code, height=1500, scrolling=True)
