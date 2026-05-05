@@ -1,13 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v8", layout="centered")
+# 1. ページ設定
+st.set_page_config(page_title="Tennis Counter Pro v9", layout="centered")
 
-html_code = """
-<!DOCTYPE html>
-<html lang="ja">
-<head>
+# --- PWA対応のHTMLコード ---
 html_code = """
 <!DOCTYPE html>
 <html lang="ja">
@@ -15,26 +12,19 @@ html_code = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- ここから追加：PWA設定 -->
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="static/manifest.json">
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('static/sw.js').then(function(reg) {
+            console.log('PWA ServiceWorker registered');
+          }).catch(function(err) {
+            console.log('PWA ServiceWorker failed', err);
+          });
+        });
+      }
     </script>
-    <!-- ここまで追加 -->
 
-    <style>
-        /* 既存のCSS... */
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { font-family: -apple-system, sans-serif; background: white; padding: 2px; margin: 0; }
         
@@ -90,7 +80,6 @@ html_code = """
     </style>
 </head>
 <body>
-
     <div id="main-ui">
         <div class="score-box">
             <div id="srv-p1-mini" class="srv-mini">1st: 0%<br>(0/0)</div>
@@ -99,17 +88,14 @@ html_code = """
             <div id="pts" class="main-score">0 — 0</div>
             <div id="disp-names" class="names-display">自分 & ペア vs 相手</div>
         </div>
-
         <div class="player-selector">
             <div id="tag1" class="p-btn active" onclick="setPlayer(1)">自分</div>
             <div id="tag2" class="p-btn" onclick="setPlayer(2)">ペア</div>
         </div>
-
         <div class="serve-btn-grid">
             <button class="s-btn s-in" onclick="countServe(true)">1st IN</button>
             <button class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
-
         <div class="label-grid">
             <div class="label-win">得点</div>
             <div class="label-loss">失点</div>
@@ -118,22 +104,17 @@ html_code = """
         <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
     </div>
 
-    <hr style="border: 1px dashed #ccc; margin: 25px 0;">
-
     <div class="report-card" id="screenshot-area">
         <div class="report-title">MATCH REPORT</div>
         <div id="rep-match-name" class="rep-match-name">未設定の試合</div>
-        
         <div class="final-score-rep">
             <div id="final-gms" style="font-size:32px; font-weight: 900; color:#d32f2f;">0 — 0</div>
             <div id="final-names" style="font-size:12px; font-weight: bold;">自分 & ペア vs 相手</div>
         </div>
-
         <table>
             <thead id="stats-head"></thead>
             <tbody id="stats-body"></tbody>
         </table>
-
         <div id="history-area" class="history-grid"></div>
         <div id="rep-memo" class="memo-box">メモなし</div>
     </div>
@@ -149,6 +130,7 @@ html_code = """
     </details>
 
     <script>
+        // --- 内部ロジックは前回通り ---
         var state = {
             p1:0, p2:0, g1:0, g2:0, active:1,
             match_n: "未設定の試合", p1_n: "自分", p2_n: "ペア", opp_n: "相手", memo: "メモなし",
@@ -184,7 +166,6 @@ html_code = """
 
         function count(label, isWin) {
             stack.push(JSON.stringify(state));
-            
             if (label === '相手のミス') {
                 state.stats.other['相手のミス']++;
                 state.p1++;
@@ -196,7 +177,6 @@ html_code = """
                 state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
                 if(isWin) state.p1++; else state.p2++;
             }
-            
             if((state.p1 >= 4 || state.p2 >= 4) && Math.abs(state.p1 - state.p2) >= 2) {
                 state.history.push(state.p1 + "-" + state.p2);
                 if(state.p1 > state.p2) state.g1++; else state.g2++;
@@ -231,32 +211,21 @@ html_code = """
             document.getElementById('tag2').innerText = state.p2_n;
             document.getElementById('tag1').className = state.active==1 ? 'p-btn active' : 'p-btn';
             document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
-            
             document.getElementById('srv-p1-mini').innerHTML = "1st: " + getSrvText('p1').split(' ')[0] + "<br>" + getSrvText('p1').split(' ')[1];
             document.getElementById('srv-p2-mini').innerHTML = "1st: " + getSrvText('p2').split(' ')[0] + "<br>" + getSrvText('p2').split(' ')[1];
-
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('rep-memo').innerText = state.memo;
-
             document.getElementById('stats-head').innerHTML = "<tr><th style='width:40%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th></tr>";
-            
-            // 1st成功率を行の最初に追加
             var rows = "<tr class='srv-row'><td style='text-align:left;'>1st成功率</td><td>"+getSrvText('p1')+"</td><td>"+getSrvText('p2')+"</td></tr>";
-            
-            // 個別項目
             var items = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', 'ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス'];
             items.forEach(function(s){
                 rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>";
             });
-            
-            // 下部に「相手のミス・エース」を独立行として表示 (カラー解除)
-            rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2' style='font-size:14px; color:black;'>"+state.stats.other['相手のミス']+"</td></tr>";
-            rows += "<tr class='total-row'><td style='text-align:left;'>相手のエース (計)</td><td colspan='2' style='font-size:14px; color:black;'>"+state.stats.other['相手のエース']+"</td></tr>";
-            
+            rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2' style='font-size:14px;'>"+state.stats.other['相手のミス']+"</td></tr>";
+            rows += "<tr class='total-row'><td style='text-align:left;'>相手のエース (計)</td><td colspan='2' style='font-size:14px;'>"+state.stats.other['相手のエース']+"</td></tr>";
             document.getElementById('stats-body').innerHTML = rows;
-            
             var h = "";
             state.history.forEach(function(x, i){ h += '<div class="history-item">G'+(i+1)+': '+x+'</div>'; });
             document.getElementById('history-area').innerHTML = h;
