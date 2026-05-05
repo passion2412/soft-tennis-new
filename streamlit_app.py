@@ -38,7 +38,8 @@ html_code = """
         .btn-win { background-color: #007AFF; }
         .btn-loss { background-color: #FF3B30; }
 
-        .undo-btn { background: #666; color: white; border: none; padding: 8px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        /* 戻るボタンの強調 */
+        .undo-btn { background: #666; color: white; border: none; padding: 10px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 13px; cursor: pointer; }
 
         /* Match Report (スクショ用) */
         .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; width: 100%; box-sizing: border-box; }
@@ -81,7 +82,7 @@ html_code = """
         </div>
 
         <div class="grid" id="button-area"></div>
-        <button class="undo-btn" onclick="undo()">↩ Undo</button>
+        <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
     </div>
 
     <hr style="border: 1px dashed #ccc; margin: 20px 0;">
@@ -112,11 +113,11 @@ html_code = """
 
     <details>
         <summary>⚙️ 試合名・選手名・メモ・リセット</summary>
-        <input type="text" id="in-match" placeholder="試合名 (例: 2024 春季大会 1回戦)" oninput="updateSettings()">
+        <input type="text" id="in-match" placeholder="試合名 (例: 大会 1回戦)" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
         <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
-        <textarea id="in-memo" rows="3" placeholder="試合のメモ (コート状況、相手の弱点など)" oninput="updateSettings()"></textarea>
+        <textarea id="in-memo" rows="3" placeholder="試合のメモ (例: 相手はバックが弱い)" oninput="updateSettings()"></textarea>
         <button onclick="location.reload()" style="background:#f44336; color:white; width:100%; padding:10px; border:none; border-radius:4px; margin-top:10px; font-weight:bold;">データを全消去</button>
     </details>
 
@@ -195,11 +196,9 @@ html_code = """
             document.getElementById('tag1').className = state.active==1 ? 'p-btn active' : 'p-btn';
             document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
             
-            // スコアボード内確率 (白文字)
             document.getElementById('srv-p1-mini').innerHTML = "1st: " + getSrvText('p1').replace(' ', '<br>');
             document.getElementById('srv-p2-mini').innerHTML = "1st: " + getSrvText('p2').replace(' ', '<br>');
 
-            // レポート
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
