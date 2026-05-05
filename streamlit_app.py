@@ -1,8 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v7", layout="centered")
+# ページ設定
+st.set_page_config(page_title="Tennis Counter Pro v8", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -54,6 +54,7 @@ html_code = """
         th, td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; }
         th { background: #f4f4f4; }
         .total-row { background: #f9f9f9; font-weight: bold; }
+        .srv-row { background: #f0f8ff; font-weight: bold; }
         
         .memo-box { font-size: 11px; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ccc; white-space: pre-wrap; }
         .history-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
@@ -106,11 +107,6 @@ html_code = """
         <table>
             <thead id="stats-head"></thead>
             <tbody id="stats-body"></tbody>
-            <tr style="background:#f0f8ff; font-weight:bold;">
-                <td>1st成功率</td>
-                <td id="rep-srv1">0% (0/0)</td>
-                <td id="rep-srv2">0% (0/0)</td>
-            </tr>
         </table>
 
         <div id="history-area" class="history-grid"></div>
@@ -217,22 +213,22 @@ html_code = """
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
-            document.getElementById('rep-srv1').innerText = getSrvText('p1');
-            document.getElementById('rep-srv2').innerText = getSrvText('p2');
             document.getElementById('rep-memo').innerText = state.memo;
 
             document.getElementById('stats-head').innerHTML = "<tr><th style='width:40%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th></tr>";
             
+            // 1st成功率を行の最初に追加
+            var rows = "<tr class='srv-row'><td style='text-align:left;'>1st成功率</td><td>"+getSrvText('p1')+"</td><td>"+getSrvText('p2')+"</td></tr>";
+            
             // 個別項目
             var items = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', 'ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス'];
-            var rows = "";
             items.forEach(function(s){
                 rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>";
             });
             
-            // 下部に「相手のミス・エース」を独立行として表示
-            rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2' style='font-size:14px; color:#007AFF;'>"+state.stats.other['相手のミス']+"</td></tr>";
-            rows += "<tr class='total-row'><td style='text-align:left;'>相手のエース (計)</td><td colspan='2' style='font-size:14px; color:#FF3B30;'>"+state.stats.other['相手のエース']+"</td></tr>";
+            // 下部に「相手のミス・エース」を独立行として表示 (カラー解除)
+            rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2' style='font-size:14px; color:black;'>"+state.stats.other['相手のミス']+"</td></tr>";
+            rows += "<tr class='total-row'><td style='text-align:left;'>相手のエース (計)</td><td colspan='2' style='font-size:14px; color:black;'>"+state.stats.other['相手のエース']+"</td></tr>";
             
             document.getElementById('stats-body').innerHTML = rows;
             
