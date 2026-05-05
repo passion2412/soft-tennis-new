@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v3", layout="centered")
+st.set_page_config(page_title="Tennis Counter Top Score", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -12,60 +12,68 @@ html_code = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { font-family: -apple-system, sans-serif; background: white; padding: 5px; margin: 0; }
-        .room-tag { font-size: 10px; color: #ccc; text-align: right; margin-bottom: 5px; }
+        .room-tag { font-size: 9px; color: #eee; text-align: right; }
         
-        /* 選手選択（最上部へ） */
-        .player-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; cursor: pointer; font-size: 15px; }
-        .p-btn.active { background: #E67E22; color: white; }
+        /* 1. スコアボード（最上部） */
+        .score-box { background: #1a1a1a; color: white; border-radius: 12px; text-align: center; padding: 15px 10px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .main-score { font-size: 64px; font-weight: 900; line-height: 1; margin: 5px 0; letter-spacing: -2px; }
+        .game-score { font-size: 22px; color: #4CAF50; font-weight: bold; margin-bottom: 5px; }
+        .names-display { font-size: 14px; opacity: 0.8; border-top: 1px solid #333; pt: 8px; margin-top: 8px; padding-top: 8px; }
 
-        /* スコアボード */
-        .score-box { background: #222; color: white; border-radius: 10px; text-align: center; padding: 10px; margin-bottom: 10px; }
-        .names-display { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
-        .main-score { font-size: 52px; font-weight: 900; line-height: 1; margin: 5px 0; }
-        .game-score { font-size: 20px; color: #4CAF50; font-weight: bold; }
+        /* 2. 選手選択 */
+        .player-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .p-btn.active { background: #E67E22; color: white; transform: scale(1.02); }
 
-        /* サーブ入力エリア（成功率は消去） */
-        .serve-box { background: #f0f8ff; border: 1px solid #007AFF; border-radius: 10px; padding: 8px; margin-bottom: 10px; }
+        /* 3. サーブ入力 */
+        .serve-box { background: #f0f8ff; border: 1px solid #007AFF; border-radius: 10px; padding: 8px; margin-bottom: 12px; }
         .serve-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .s-btn { height: 40px; border-radius: 20px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .s-btn { height: 44px; border-radius: 22px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 14px; }
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
 
-        /* カウントボタン */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
-        .btn { height: 50px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
+        /* 4. メインカウントボタン */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+        .btn { height: 54px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 13px; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .btn-win { background-color: #007AFF; }
         .btn-loss { background-color: #FF3B30; }
 
-        .undo-btn { background: #666; color: white; border: none; padding: 10px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
-        /* レポートエリア */
-        .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; margin-top: 15px; }
-        .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
+        /* レポート */
+        .report-card { border: 2px solid #333; border-radius: 8px; padding: 12px; background: #fff; margin-top: 20px; }
+        .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -12px -12px 12px -12px; padding: 10px; border-radius: 6px 6px 0 0; text-align: center; }
+        .final-score-rep { text-align:center; padding: 15px 0; border-bottom: 1px solid #eee; margin-bottom: 15px; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background: #f4f4f4; }
         
         .history-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
-        .history-item { border: 1px solid #333; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: bold; background: #eee; }
+        .history-item { border: 1px solid #333; border-radius: 4px; padding: 4px 8px; font-size: 12px; font-weight: bold; background: #eee; }
 
-        details { margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f9f9f9; color: #666; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        details { margin-top: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; color: #444; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
     </style>
 </head>
 <body>
 
-    <div class="room-tag">Room: <input type="text" id="room-id" value="Room1" style="width:50px; border:none; background:transparent; color:#ccc; font-size:10px;"></div>
+    <div class="room-tag">Room: <input type="text" id="room-id" value="Room1" style="width:40px; border:none; background:transparent; color:#eee; font-size:9px;"></div>
 
-    <!-- 1. 選手選択（最上部に移動） -->
+    <!-- 1. スコアボード（一番上に配置） -->
+    <div class="score-box">
+        <div id="gms" class="game-score">Game: 0 — 0</div>
+        <div id="pts" class="main-score">0 — 0</div>
+        <div id="disp-names" class="names-display">自分 & ペア vs 相手</div>
+    </div>
+
+    <!-- 2. 選手選択 -->
     <div class="player-selector">
         <div id="tag1" class="p-btn active" onclick="setPlayer(1)">自分</div>
         <div id="tag2" class="p-btn" onclick="setPlayer(2)">ペア</div>
     </div>
 
-    <!-- 2. サーブ入力エリア -->
+    <!-- 3. サーブ入力 -->
     <div class="serve-box">
         <div class="serve-btn-grid">
             <button class="s-btn s-in" onclick="countServe(true)">1st IN</button>
@@ -73,29 +81,21 @@ html_code = """
         </div>
     </div>
 
-    <!-- 3. スコアボード -->
-    <div class="score-box">
-        <div id="disp-names" class="names-display">自分 & ペア vs 相手</div>
-        <div id="pts" class="main-score">0 — 0</div>
-        <div id="gms" class="game-score">Game: 0 — 0</div>
-    </div>
-
-    <!-- 4. メインボタン -->
+    <!-- 4. メインカウントボタン -->
     <div class="grid" id="button-area"></div>
     <button class="undo-btn" onclick="undo()">↩ 一つ戻る (Undo)</button>
 
     <!-- 5. レポート -->
     <div class="report-card">
         <div class="report-title">MATCH REPORT</div>
-        
-        <div style="text-align:center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 10px;">
-            <div id="final-gms" style="font-size:32px; font-weight: 900; color:#d32f2f; letter-spacing: 2px;">0 — 0</div>
-            <div id="final-names" style="font-size:13px; font-weight: bold;">自分 & ペア vs 相手</div>
+        <div class="final-score-rep">
+            <div id="final-gms" style="font-size:36px; font-weight: 900; color:#d32f2f; letter-spacing: 2px;">0 — 0</div>
+            <div id="final-names" style="font-size:14px; font-weight: bold; margin-top: 5px;">自分 & ペア vs 相手</div>
         </div>
 
         <table>
             <tr style="background:#f0f8ff;">
-                <th style="font-size: 10px;">1st成功率</th>
+                <th style="font-size: 11px;">1st成功率</th>
                 <th id="rep-srv1" style="color:#007AFF;">自分: 0%</th>
                 <th id="rep-srv2" style="color:#007AFF;">ペア: 0%</th>
             </tr>
@@ -115,7 +115,7 @@ html_code = """
         <input type="text" id="in-p1" placeholder="自分の名前" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペアの名前" oninput="updateSettings()">
         <input type="text" id="in-opp" placeholder="対戦相手名" oninput="updateSettings()">
-        <button onclick="location.reload()" style="background:#f44336; color:white; width:100%; padding:10px; border:none; border-radius:4px; margin-top:10px; font-weight:bold;">データを全消去</button>
+        <button onclick="location.reload()" style="background:#f44336; color:white; width:100%; padding:12px; border:none; border-radius:6px; margin-top:15px; font-weight:bold; cursor:pointer;">データを全消去</button>
     </details>
 
     <script>
