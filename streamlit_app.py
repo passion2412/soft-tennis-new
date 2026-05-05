@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v4", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v5", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -19,7 +19,7 @@ html_code = """
         .game-score { font-size: 18px; color: #4CAF50; font-weight: bold; }
         .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
         
-        /* サーブ確率表示を大きく */
+        /* サーブ確率表示 (白文字・大) */
         .srv-mini { position: absolute; font-size: 14px; color: white; font-weight: bold; top: 12px; line-height: 1.2; }
         #srv-p1-mini { left: 12px; text-align: left; }
         #srv-p2-mini { right: 12px; text-align: right; }
@@ -33,7 +33,6 @@ html_code = """
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
 
-        /* ボタンガイド（得点・失点） */
         .label-grid { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
         .label-win { color: #007AFF; }
         .label-loss { color: #FF3B30; }
@@ -51,9 +50,10 @@ html_code = """
         .rep-match-name { font-size: 13px; font-weight: bold; text-align: center; color: #444; margin-bottom: 5px; }
         .final-score-rep { text-align:center; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 8px; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
         th, td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; }
         th { background: #f4f4f4; }
+        .col-opp { background: #fffafa; } /* 相手列の色をわずかに変える */
         
         .memo-box { font-size: 11px; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ccc; white-space: pre-wrap; }
         .history-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
@@ -110,6 +110,7 @@ html_code = """
                 <td>1st成功率</td>
                 <td id="rep-srv1">0% (0/0)</td>
                 <td id="rep-srv2">0% (0/0)</td>
+                <td class="col-opp">-</td>
             </tr>
         </table>
 
@@ -131,7 +132,7 @@ html_code = """
         var state = {
             p1:0, p2:0, g1:0, g2:0, active:1,
             match_n: "未設定の試合", p1_n: "自分", p2_n: "ペア", opp_n: "相手", memo: "メモなし",
-            stats: { p1: {}, p2: {} },
+            stats: { p1: {}, p2: {}, opp: {} },
             serve: { p1_in: 0, p1_total: 0, p2_in: 0, p2_total: 0 },
             history: []
         };
@@ -146,7 +147,10 @@ html_code = """
                 var bW = document.createElement('button'); bW.className='btn btn-win'; bW.innerText=w; bW.onclick=function(){count(w,true)};
                 var bL = document.createElement('button'); bL.className='btn btn-loss'; bL.innerText=l; bL.onclick=function(){count(l,false)};
                 area.appendChild(bW); area.appendChild(bL);
-                state.stats.p1[w]=0; state.stats.p1[l]=0; state.stats.p2[w]=0; state.stats.p2[l]=0;
+                
+                state.stats.p1[w]=0; state.stats.p1[l]=0; 
+                state.stats.p2[w]=0; state.stats.p2[l]=0;
+                state.stats.opp[w]=0; state.stats.opp[l]=0;
             });
             render();
         }
@@ -163,10 +167,21 @@ html_code = """
 
         function count(label, isWin) {
             stack.push(JSON.stringify(state));
-            var pKey = state.active == 1 ? 'p1' : 'p2';
-            state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
-            if(isWin) state.p1++; else state.p2++;
             
+            // 特殊項目の振り分け
+            if (label === '相手のミス') {
+                state.stats.opp['ミス'] = (state.stats.opp['ミス'] || 0) + 1;
+                state.p1++; // 自分たちの得点
+            } else if (label === '相手のエース') {
+                state.stats.opp['エース'] = (state.stats.opp['エース'] || 0) + 1;
+                state.p2++; // 相手の得点
+            } else {
+                var pKey = state.active == 1 ? 'p1' : 'p2';
+                state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
+                if(isWin) state.p1++; else state.p2++;
+            }
+            
+            // ゲーム判定
             if((state.p1 >= 4 || state.p2 >= 4) && Math.abs(state.p1 - state.p2) >= 2) {
                 state.history.push(state.p1 + "-" + state.p2);
                 if(state.p1 > state.p2) state.g1++; else state.g2++;
@@ -202,11 +217,9 @@ html_code = """
             document.getElementById('tag1').className = state.active==1 ? 'p-btn active' : 'p-btn';
             document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
             
-            // スコアボード内確率 (大きく表示)
             document.getElementById('srv-p1-mini').innerHTML = "1st: " + getSrvText('p1').split(' ')[0] + "<br>" + getSrvText('p1').split(' ')[1];
             document.getElementById('srv-p2-mini').innerHTML = "1st: " + getSrvText('p2').split(' ')[0] + "<br>" + getSrvText('p2').split(' ')[1];
 
-            // レポート
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
@@ -214,14 +227,18 @@ html_code = """
             document.getElementById('rep-srv2').innerText = getSrvText('p2');
             document.getElementById('rep-memo').innerText = state.memo;
 
-            document.getElementById('stats-head').innerHTML = "<tr><th style='width:40%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th></tr>";
+            // テーブルヘッダーの更新
+            document.getElementById('stats-head').innerHTML = "<tr><th style='width:34%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th class='col-opp'>"+state.opp_n+"</th></tr>";
             
-            // 全ての項目をレポートに表示
-            var reportItems = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', '相手のミス', 'ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス', '相手のエース'];
+            var commonItems = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', 'ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス'];
             var rows = "";
-            reportItems.forEach(function(s){
-                rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>";
+            commonItems.forEach(function(s){
+                rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td><td class='col-opp'>-</td></tr>";
             });
+            // 相手専用の行を追加
+            rows += "<tr style='border-top: 2px solid #aaa;'><td style='text-align:left; font-weight:bold;'>相手のミス (計)</td><td colspan='2'>-</td><td class='col-opp' style='font-weight:bold;'>"+(state.stats.opp['ミス']||0)+"</td></tr>";
+            rows += "<tr><td style='text-align:left; font-weight:bold;'>相手のエース (計)</td><td colspan='2'>-</td><td class='col-opp' style='font-weight:bold;'>"+(state.stats.opp['エース']||0)+"</td></tr>";
+            
             document.getElementById('stats-body').innerHTML = rows;
             
             var h = "";
