@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v26", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v27", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -74,8 +74,8 @@ html_code = """
     <div id="main-ui">
         <div class="score-box">
             <div class="srv-stats-area">
-                <div id="srv-p1-box" class="srv-item">後衛<br><span id="s1-pct" class="srv-val">0%</span> <span id="s1-cnt">(0/0)</span></div>
-                <div id="srv-p2-box" class="srv-item">前衛<br><span id="s2-pct" class="srv-val">0%</span> <span id="s2-cnt">(0/0)</span></div>
+                <div id="srv-p1-box" class="srv-item"><span id="lbl-s1">後衛</span><br><span id="s1-pct" class="srv-val">0%</span> <span id="s1-cnt">(0/0)</span></div>
+                <div id="srv-p2-box" class="srv-item"><span id="lbl-s2">前衛</span><br><span id="s2-pct" class="srv-val">0%</span> <span id="s2-cnt">(0/0)</span></div>
             </div>
             <div class="score-center">
                 <div id="gms" class="game-score">G: 0 — 0</div>
@@ -224,12 +224,16 @@ html_code = """
             
             document.getElementById('serve-input-area').style.visibility = (state.active === 3) ? "hidden" : "visible";
 
-            document.getElementById('tag1').className = 'p-btn' + (state.active==1 ? ' active' : '');
-            document.getElementById('tag2').className = 'p-btn' + (state.active==2 ? ' active' : '');
-            document.getElementById('tag3').className = 'p-btn' + (state.active==3 ? ' active' : '');
+            // 名前反映
+            document.getElementById('lbl-s1').innerText = state.p1_n;
+            document.getElementById('lbl-s2').innerText = state.p2_n;
             document.getElementById('tag1').innerText = state.p1_n;
             document.getElementById('tag2').innerText = state.p2_n;
             document.getElementById('tag3').innerText = "相手";
+            
+            document.getElementById('tag1').className = 'p-btn' + (state.active==1 ? ' active' : '');
+            document.getElementById('tag2').className = 'p-btn' + (state.active==2 ? ' active' : '');
+            document.getElementById('tag3').className = 'p-btn' + (state.active==3 ? ' active' : '');
             
             var s1_v = state.serve.p1_in + "/" + state.serve.p1_total;
             var s2_v = state.serve.p2_in + "/" + state.serve.p2_total;
