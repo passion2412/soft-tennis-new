@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v23", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v24", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -13,16 +13,16 @@ html_code = """
         body { font-family: -apple-system, sans-serif; background: white; padding: 2px; margin: 0; }
         .score-box { 
             background: #1a1a1a; color: white; border-radius: 8px; 
-            display: grid; grid-template-columns: 100px 1fr 60px; 
+            display: grid; grid-template-columns: 80px 1fr 80px; 
             padding: 12px 8px; margin-bottom: 6px; align-items: center;
         }
-        .srv-stats-area { text-align: left; font-size: 10px; line-height: 1.3; border-right: 1px solid #333; }
+        .srv-stats-area { text-align: left; font-size: 10px; line-height: 1.3; }
         .srv-item { margin-bottom: 4px; color: #bbb; }
         .srv-item.active { color: #FFD700; font-weight: bold; }
         .srv-val { font-size: 11px; color: white; }
-        .score-center { text-align: center; }
+        .score-center { text-align: center; width: 100%; }
         .main-score { font-size: 42px; font-weight: 900; line-height: 1; margin: 0; }
-        .game-score { font-size: 20px; color: #4CAF50; font-weight: 900; margin-bottom: 2px; }
+        .game-score { font-size: 20px; color: #4CAF50; font-weight: 900; margin-bottom: 2px; display: block; width: 100%; text-align: center; }
         .info-right { text-align: right; font-size: 10px; color: #E67E22; font-weight: bold; }
         
         .player-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin: 8px 0; }
@@ -39,7 +39,9 @@ html_code = """
         .btn-win { background-color: #007AFF; }
         .btn-loss { background-color: #FF3B30; }
         
-        .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+        .bottom-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 20px; }
+        .netin-btn { background: #007AFF; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .undo-btn { background: #666; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; }
         
         textarea { width: 100%; height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 12px; margin-bottom: 20px; }
 
@@ -91,12 +93,16 @@ html_code = """
         </div>
 
         <div class="serve-btn-grid" id="serve-input-area">
-            <button id="s-in-btn" class="s-btn s-in" onclick="countServe(true)">1st IN</button>
+            <button id="s-in-btn" class="s-btn s-in" onclick="countServe(true)">1st イン</button>
             <button id="s-fault-btn" class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
 
         <div class="grid" id="button-area"></div>
-        <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
+        
+        <div class="bottom-action-grid">
+            <button class="netin-btn" onclick="count('ネットイン', true)">ネットイン</button>
+            <button class="undo-btn" onclick="undo()">↩ 戻る</button>
+        </div>
 
         <textarea id="match-memo" placeholder="試合のメモ（ここに入力するとレポートに反映されます）" oninput="render()"></textarea>
     </div>
@@ -156,6 +162,8 @@ html_code = """
                 state.stats.p2[w]=0; state.stats.p2[l]=0;
                 state.stats.opp[w]=0; state.stats.opp[l]=0;
             });
+            // ネットイン項目の初期化
+            state.stats.p1['ネットイン']=0; state.stats.p2['ネットイン']=0; state.stats.opp['ネットイン']=0;
             render();
         }
 
@@ -222,7 +230,7 @@ html_code = """
             document.getElementById('tag3').className = 'p-btn' + (state.active==3 ? ' active' : '');
             document.getElementById('tag1').innerText = state.p1_n;
             document.getElementById('tag2').innerText = state.p2_n;
-            document.getElementById('tag3').innerText = "相手"; // ボタンは常に「相手」
+            document.getElementById('tag3').innerText = "相手";
             
             var s1_v = state.serve.p1_in + "/" + state.serve.p1_total;
             var s2_v = state.serve.p2_in + "/" + state.serve.p2_total;
@@ -239,12 +247,15 @@ html_code = """
             document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>相手</th></tr>";
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
-            ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
+            
+            // ネットインも含めて表示
+            var items = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ネットイン', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
+            items.forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
 
             var p12_aces = 0, p12_miss = 0, opp_aces = 0, opp_miss = 0;
-            ['サービスエース','レシーブエース','ストローク','ボレー','スマッシュ'].forEach(k => { 
+            ['サービスエース','レシーブエース','ストローク','ボレー','スマッシュ','ネットイン'].forEach(k => { 
                 p12_aces += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_aces += (state.stats.opp[k]||0);
             });
@@ -252,7 +263,6 @@ html_code = """
                 p12_miss += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_miss += (state.stats.opp[k]||0);
             });
-            // エース計に変更
             rows += "<tr class='total-row'><td>エース計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
             rows += "<tr class='total-row'><td>ミス計</td><td colspan='2' style='color:#FF3B30;'>" + p12_miss + "</td><td style='color:#FF3B30;'>" + opp_miss + "</td></tr>";
             document.getElementById('stats-body').innerHTML = rows;
