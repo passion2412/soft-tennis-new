@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v21", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v22", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -45,14 +45,17 @@ html_code = """
 
         .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; width: 100%; box-sizing: border-box; }
         .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
-        .final-score-area { text-align: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 10px; }
-        .final-gms { font-size: 36px; font-weight: 900; color: #d32f2f; line-height: 1; }
+        
+        .report-header-area { text-align: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+        .rep-names { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; }
+        .rep-match { font-size: 11px; color: #666; margin-bottom: 8px; }
+        .final-gms { font-size: 40px; font-weight: 900; color: #d32f2f; line-height: 1; margin-bottom: 5px; }
         
         table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
         th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; }
         .total-row { background: #f9f9f9; font-weight: bold; font-size: 11px; }
         
-        .history-section { border-top: 1px dashed #ccc; padding-top: 10px; margin-bottom: 10px; }
+        .history-section { border-top: 1px dashed #ccc; padding: 10px 0; margin-bottom: 10px; }
         .history-label { font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; text-align: center; }
         .history-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
         .history-item { border: 1px solid #333; padding: 3px 6px; font-size: 10px; background: #f8f8f8; border-radius: 4px; font-weight: bold; }
@@ -100,21 +103,23 @@ html_code = """
 
     <div class="report-card">
         <div class="report-title">MATCH REPORT</div>
-        <div class="final-score-area">
-            <div id="final-gms" class="final-gms">0 — 0</div>
-            <div id="final-names" style="font-size:12px; font-weight:bold; margin-top:5px;"></div>
-            <div id="rep-match-name" style="font-size:10px; color:#666; margin-top:4px;"></div>
-        </div>
-        <table>
-            <thead id="stats-head"></thead>
-            <tbody id="stats-body"></tbody>
-        </table>
         
+        <div class="report-header-area">
+            <div id="rep-match-name" class="rep-match"></div>
+            <div id="final-names" class="rep-names"></div>
+            <div id="final-gms" class="final-gms">0 — 0</div>
+        </div>
+
         <div class="history-section">
             <div class="history-label">GAME SCORE HISTORY</div>
             <div id="history-area" class="history-list"></div>
         </div>
 
+        <table>
+            <thead id="stats-head"></thead>
+            <tbody id="stats-body"></tbody>
+        </table>
+        
         <div id="report-memo-display" class="report-memo" style="display:none;"></div>
     </div>
 
@@ -134,11 +139,11 @@ html_code = """
             stats: { p1: {}, p2: {}, opp: {} },
             serve: { p1_in: 0, p1_total: 0, p2_in: 0, p2_total: 0 },
             history: [],
-            current_game_serves: 0 // 今のゲームでサーブボタンが押された回数
+            current_game_serves: 0 
         };
         var stack = [];
-        // 「相手のミス」「相手のエース」を削除
-        var wins = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ'];
+        // 「エース」を「ストローク」に変更
+        var wins = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ'];
         var loss = ['ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
 
         function init() {
@@ -163,7 +168,7 @@ html_code = """
             var p = state.active == 1 ? 'p1' : 'p2';
             state.serve[p+'_total']++;
             if(isIn) state.serve[p+'_in']++;
-            state.current_game_serves++; // 判定用
+            state.current_game_serves++; 
             render();
         }
 
@@ -184,7 +189,6 @@ html_code = """
         }
 
         function finishGame() {
-            // サーブ入力が1回でもあればS(Serve)、なければR(Receive)
             var side = (state.current_game_serves > 0) ? "S" : "R";
             state.history.push({
                 score: state.p1 + "-" + state.p2 + (state.is_final ? "(F)" : ""),
@@ -192,7 +196,7 @@ html_code = """
             });
             if(state.p1 > state.p2) state.g1++; else state.g2++;
             state.p1 = 0; state.p2 = 0;
-            state.current_game_serves = 0; // リセット
+            state.current_game_serves = 0;
             var win_limit = Math.ceil(state.match_type / 2);
             if(state.g1 >= win_limit || state.g2 >= win_limit) state.is_final = false;
         }
@@ -212,7 +216,6 @@ html_code = """
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
             document.getElementById('game-mode').innerText = state.is_final ? "FINAL" : "";
             
-            // サーブボタンの表示・非表示（相手選択時は隠す）
             document.getElementById('serve-input-area').style.visibility = (state.active === 3) ? "hidden" : "visible";
 
             document.getElementById('tag1').className = 'p-btn' + (state.active==1 ? ' active' : '');
@@ -222,8 +225,6 @@ html_code = """
             document.getElementById('tag2').innerText = state.p2_n;
             document.getElementById('tag3').innerText = state.opp_n;
             
-            document.getElementById('srv-p1-box').className = state.active==1 ? 'srv-item active' : 'srv-item';
-            document.getElementById('srv-p2-box').className = state.active==2 ? 'srv-item active' : 'srv-item';
             var s1_v = state.serve.p1_in + "/" + state.serve.p1_total;
             var s2_v = state.serve.p2_in + "/" + state.serve.p2_total;
             var s1_pct = Math.round((state.serve.p1_in/(state.serve.p1_total||1))*100) + "%";
@@ -233,19 +234,19 @@ html_code = """
             document.getElementById('s2-pct').innerText = s2_pct;
             document.getElementById('s2-cnt').innerText = "(" + s2_v + ")";
 
+            // Report用表示（自分・ペア）
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
-            document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
+            document.getElementById('final-names').innerText = state.p1_n + " ・ " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
-            // 修正された項目リスト
-            ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
+            ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
 
             var p12_aces = 0, p12_miss = 0, opp_aces = 0, opp_miss = 0;
-            ['サービスエース','レシーブエース','エース','ボレー','スマッシュ'].forEach(k => { 
+            ['サービスエース','レシーブエース','ストローク','ボレー','スマッシュ'].forEach(k => { 
                 p12_aces += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_aces += (state.stats.opp[k]||0);
             });
@@ -253,7 +254,7 @@ html_code = """
                 p12_miss += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_miss += (state.stats.opp[k]||0);
             });
-            rows += "<tr class='total-row'><td>エース計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
+            rows += "<tr class='total-row'><td>ポイント計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
             rows += "<tr class='total-row'><td>ミス計</td><td colspan='2' style='color:#FF3B30;'>" + p12_miss + "</td><td style='color:#FF3B30;'>" + opp_miss + "</td></tr>";
             document.getElementById('stats-body').innerHTML = rows;
 
