@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v22", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v23", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -128,7 +128,7 @@ html_code = """
         <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
-        <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
+        <input type="text" id="in-opp" placeholder="相手（レポート用）" oninput="updateSettings()">
         <button class="reset-btn" onclick="if(confirm('全てのデータを消去しますか？')){location.reload();}">データを全消去</button>
     </details>
 
@@ -142,7 +142,6 @@ html_code = """
             current_game_serves: 0 
         };
         var stack = [];
-        // 「エース」を「ストローク」に変更
         var wins = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ'];
         var loss = ['ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
 
@@ -223,7 +222,7 @@ html_code = """
             document.getElementById('tag3').className = 'p-btn' + (state.active==3 ? ' active' : '');
             document.getElementById('tag1').innerText = state.p1_n;
             document.getElementById('tag2').innerText = state.p2_n;
-            document.getElementById('tag3').innerText = state.opp_n;
+            document.getElementById('tag3').innerText = "相手"; // ボタンは常に「相手」
             
             var s1_v = state.serve.p1_in + "/" + state.serve.p1_total;
             var s2_v = state.serve.p2_in + "/" + state.serve.p2_total;
@@ -234,11 +233,10 @@ html_code = """
             document.getElementById('s2-pct').innerText = s2_pct;
             document.getElementById('s2-cnt').innerText = "(" + s2_v + ")";
 
-            // Report用表示（自分・ペア）
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " ・ " + state.p2_n + " vs " + state.opp_n;
-            document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
+            document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>相手</th></tr>";
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
             ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
@@ -254,7 +252,8 @@ html_code = """
                 p12_miss += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_miss += (state.stats.opp[k]||0);
             });
-            rows += "<tr class='total-row'><td>ポイント計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
+            // エース計に変更
+            rows += "<tr class='total-row'><td>エース計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
             rows += "<tr class='total-row'><td>ミス計</td><td colspan='2' style='color:#FF3B30;'>" + p12_miss + "</td><td style='color:#FF3B30;'>" + opp_miss + "</td></tr>";
             document.getElementById('stats-body').innerHTML = rows;
 
