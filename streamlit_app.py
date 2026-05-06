@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v12", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v13", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -24,8 +24,11 @@ html_code = """
         body { font-family: -apple-system, sans-serif; background: white; padding: 2px; margin: 0; }
         .score-box { background: #1a1a1a; color: white; border-radius: 8px; text-align: center; padding: 12px 8px; margin-bottom: 6px; position: relative; }
         .main-score { font-size: 48px; font-weight: 900; line-height: 1; margin: 5px 0; }
-        .game-score { font-size: 18px; color: #4CAF50; font-weight: bold; }
-        .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; margin-bottom: 2px; min-height: 14px; }
+        
+        /* ゲームカウント表示を大きく修正 */
+        .game-score { font-size: 24px; color: #4CAF50; font-weight: 900; margin-top: 5px; }
+        
+        .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; min-height: 14px; }
         .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
         
         .srv-mini { position: absolute; font-size: 14px; color: white; font-weight: bold; top: 12px; line-height: 1.2; }
@@ -56,7 +59,7 @@ html_code = """
         .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
         th, td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; }
-        .total-row { background: #f9f9f9; font-weight: bold; }
+        .total-row { background: #f9f9f9; font-weight: bold; font-size: 13px; }
         .srv-row { background: #f0f8ff; font-weight: bold; }
         
         .history-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
@@ -134,7 +137,6 @@ html_code = """
         };
         var stack = [];
         
-        // ご要望の並び順に修正
         var wins = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', '相手のミス'];
         var loss = ['ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス', '相手のエース'];
 
@@ -180,13 +182,9 @@ html_code = """
             }
 
             if (state.is_final) {
-                if ((state.p1 >= 7 || state.p2 >= 7) && Math.abs(state.p1 - state.p2) >= 2) {
-                    finishGame();
-                }
+                if ((state.p1 >= 7 || state.p2 >= 7) && Math.abs(state.p1 - state.p2) >= 2) { finishGame(); }
             } else {
-                if ((state.p1 >= 4 || state.p2 >= 4) && Math.abs(state.p1 - state.p2) >= 2) {
-                    finishGame();
-                }
+                if ((state.p1 >= 4 || state.p2 >= 4) && Math.abs(state.p1 - state.p2) >= 2) { finishGame(); }
             }
         }
 
@@ -196,9 +194,8 @@ html_code = """
             state.p1 = 0; state.p2 = 0;
             
             var win_limit = Math.ceil(state.match_type / 2);
-            if(state.g1 >= win_limit || state.g2 >= win_limit) {
-                state.is_final = false; 
-            } else {
+            if(state.g1 >= win_limit || state.g2 >= win_limit) { state.is_final = false; }
+            else {
                 var target_games = Math.floor(state.match_type / 2);
                 state.is_final = (state.g1 === target_games && state.g2 === target_games);
             }
@@ -234,6 +231,7 @@ html_code = """
             document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
             document.getElementById('srv-p1-mini').innerHTML = "1st: " + getSrvText('p1').split(' ')[0] + "<br>" + getSrvText('p1').split(' ')[1];
             document.getElementById('srv-p2-mini').innerHTML = "1st: " + getSrvText('p2').split(' ')[0] + "<br>" + getSrvText('p2').split(' ')[1];
+            
             document.getElementById('rep-match-name').innerText = state.match_n + " (" + state.match_type + "Gマッチ)";
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
@@ -241,10 +239,9 @@ html_code = """
             
             var rows = "<tr class='srv-row'><td style='text-align:left;'>1st成功率</td><td>"+getSrvText('p1')+"</td><td>"+getSrvText('p2')+"</td></tr>";
             
-            // 各項目の集計
             var tableItems = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
             
-            // 自分たちのエースとミスの合計を計算
+            // 自分、ペアそれぞれの合計
             var p1_aces = (state.stats.p1['サービスエース']||0) + (state.stats.p1['レシーブエース']||0) + (state.stats.p1['エース']||0) + (state.stats.p1['ボレー']||0) + (state.stats.p1['スマッシュ']||0);
             var p2_aces = (state.stats.p2['サービスエース']||0) + (state.stats.p2['レシーブエース']||0) + (state.stats.p2['エース']||0) + (state.stats.p2['ボレー']||0) + (state.stats.p2['スマッシュ']||0);
             var p1_miss = (state.stats.p1['ダブルフォルト']||0) + (state.stats.p1['レシーブミス']||0) + (state.stats.p1['ストロークミス']||0) + (state.stats.p1['ボレーミス']||0) + (state.stats.p1['スマッシュミス']||0);
@@ -254,9 +251,9 @@ html_code = """
                 rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>";
             });
             
-            // 下部の集計エリア
-            rows += "<tr class='total-row'><td style='text-align:left;'>自分たちのエース (計)</td><td>"+p1_aces+"</td><td>"+p2_aces+"</td></tr>";
-            rows += "<tr class='total-row'><td style='text-align:left;'>自分たちのミス (計)</td><td>"+p1_miss+"</td><td>"+p2_miss+"</td></tr>";
+            // ★ 合算集計の表示
+            rows += "<tr class='total-row'><td style='text-align:left;'>自分たちのエース (計)</td><td colspan='2' style='color:#007AFF; font-size:16px;'>" + (p1_aces + p2_aces) + "</td></tr>";
+            rows += "<tr class='total-row'><td style='text-align:left;'>自分たちのミス (計)</td><td colspan='2' style='color:#FF3B30; font-size:16px;'>" + (p1_miss + p2_miss) + "</td></tr>";
             rows += "<tr class='total-row'><td style='text-align:left;'>相手のエース (計)</td><td colspan='2'>"+state.stats.other['相手のエース']+"</td></tr>";
             rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2'>"+state.stats.other['相手のミス']+"</td></tr>";
             
