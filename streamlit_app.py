@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v14", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v15", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -17,20 +17,25 @@ html_code = """
         .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; min-height: 14px; }
         .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
         
-        .srv-mini { position: absolute; font-size: 14px; color: white; font-weight: bold; top: 12px; line-height: 1.2; }
-        #srv-p1-mini { left: 12px; text-align: left; }
-        #srv-p2-mini { right: 12px; text-align: right; }
+        .srv-mini { position: absolute; font-size: 11px; color: white; font-weight: bold; top: 12px; line-height: 1.2; width: 70px; }
+        #srv-p1-mini { left: 8px; text-align: left; }
+        #srv-p2-mini { right: 8px; text-align: right; }
 
-        /* サービス権表示のスタイル */
         .player-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 10px 2px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 13px; transition: 0.2s; }
-        .p-btn.active { background: #E67E22; color: white; box-shadow: 0 0 10px rgba(230,126,34,0.5); }
-        .ball-icon { margin-left: 4px; }
+        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 10px 2px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 13px; transition: 0.2s; position: relative; }
+        .p-btn.active { background: #E67E22; color: white; }
+        
+        /* サービス権の新しいデザインバッジ */
+        .srv-badge { background: #FFD700; color: #000; font-size: 9px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
 
         .serve-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
         .s-btn { height: 38px; border-radius: 19px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
+
+        .label-grid { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
+        .label-win { color: #007AFF; }
+        .label-loss { color: #FF3B30; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
         .btn { height: 44px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
@@ -40,9 +45,11 @@ html_code = """
         .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; }
         .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; width: 100%; box-sizing: border-box; }
         .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; }
-        .total-row { background: #f9f9f9; font-weight: bold; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; }
+        .total-row { background: #f9f9f9; font-weight: bold; font-size: 12px; }
+        .srv-row { background: #f0f8ff; font-weight: bold; }
+        
         details { margin-top: 25px; padding: 10px; border: 1px solid #eee; }
         input, textarea, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
@@ -58,11 +65,10 @@ html_code = """
             <div id="disp-names" class="names-display"></div>
         </div>
 
-        <!-- サーブ権選択ボタン -->
         <div class="player-selector">
             <div id="tag1" class="p-btn" onclick="setPlayer(1)">自分</div>
             <div id="tag2" class="p-btn" onclick="setPlayer(2)">ペア</div>
-            <div id="tag3" class="p-btn" onclick="setPlayer(3)">相手サーブ</div>
+            <div id="tag3" class="p-btn" onclick="setPlayer(3)">相手</div>
         </div>
 
         <div class="serve-btn-grid" id="serve-input-area">
@@ -70,6 +76,10 @@ html_code = """
             <button class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
 
+        <div class="label-grid">
+            <div class="label-win">得点</div>
+            <div class="label-loss">失点</div>
+        </div>
         <div class="grid" id="button-area"></div>
         <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
     </div>
@@ -85,7 +95,7 @@ html_code = """
             <thead id="stats-head"></thead>
             <tbody id="stats-body"></tbody>
         </table>
-        <div id="history-area" class="history-grid" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px;"></div>
+        <div id="history-area" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px;"></div>
     </div>
 
     <details>
@@ -106,7 +116,7 @@ html_code = """
         var state = {
             p1:0, p2:0, g1:0, g2:0, active:1, match_type: 5, is_final: false,
             p1_n: "自分", p2_n: "ペア", opp_n: "相手", match_n: "未設定の試合",
-            stats: { p1: {}, p2: {}, other: { '相手のミス': 0, '相手のエース': 0 } },
+            stats: { p1: {}, p2: {}, opp: {} },
             serve: { p1_in: 0, p1_total: 0, p2_in: 0, p2_total: 0 },
             history: []
         };
@@ -121,7 +131,9 @@ html_code = """
                 var bW = document.createElement('button'); bW.className='btn btn-win'; bW.innerText=w; bW.onclick=function(){count(w,true)};
                 var bL = document.createElement('button'); bL.className='btn btn-loss'; bL.innerText=l; bL.onclick=function(){count(l,false)};
                 area.appendChild(bW); area.appendChild(bL);
-                state.stats.p1[w]=0; state.stats.p1[l]=0; state.stats.p2[w]=0; state.stats.p2[l]=0;
+                state.stats.p1[w]=0; state.stats.p1[l]=0; 
+                state.stats.p2[w]=0; state.stats.p2[l]=0;
+                state.stats.opp[w]=0; state.stats.opp[l]=0;
             });
             render();
         }
@@ -129,7 +141,7 @@ html_code = """
         function setPlayer(n) { state.active = n; render(); }
 
         function countServe(isIn) {
-            if(state.active === 3) return; // 相手サーブ時は自分たちの確率はカウントしない
+            if(state.active === 3) return;
             stack.push(JSON.stringify(state));
             var p = state.active == 1 ? 'p1' : 'p2';
             state.serve[p+'_total']++;
@@ -139,17 +151,20 @@ html_code = """
 
         function count(label, isWin) {
             stack.push(JSON.stringify(state));
-            if (label === '相手のミス') { state.stats.other['相手のミス']++; state.p1++; }
-            else if (label === '相手のエース') { state.stats.other['相手のエース']++; state.p2++; }
-            else {
-                // 得点/失点した時に選択されているのが「自分」か「ペア」か、それとも「相手(3)」かで統計の付け先を決める
-                // 相手サーブ中でも、自分たちのミスやエースは記録したいので、直前に選択していた方を優先するロジックなどもありますが、
-                // ここではシンプルに active が 1or2 の時はその人に、3の時は最後に選択していた自分側の人に付けるか、
-                // もしくは入力を促す形になります。今回は「自分」をデフォルトにします。
-                var pKey = (state.active == 2) ? 'p2' : 'p1';
-                state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
+            var pKey = (state.active == 1) ? 'p1' : (state.active == 2 ? 'p2' : 'opp');
+            
+            // 誰のステータスにカウントするか
+            state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
+            
+            // スコアへの反映 (自分たちの得点か相手の得点か)
+            if (state.active == 3) {
+                // 相手が選択されている時：「得点」ボタンは相手の得点、「失点」ボタンは自分たちの得点
+                if(isWin) state.p2++; else state.p1++;
+            } else {
+                // 自分/ペアが選択されている時：通常通り
                 if(isWin) state.p1++; else state.p2++;
             }
+            
             checkScore();
             render();
         }
@@ -185,51 +200,56 @@ html_code = """
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
             document.getElementById('game-mode').innerText = state.is_final ? "★ファイナルゲーム (7点先取)" : "";
             
-            // 名前表示の更新（🎾マーク付き）
-            var p1_disp = state.p1_n + (state.active==1 ? "🎾" : "");
-            var p2_disp = state.p2_n + (state.active==2 ? "🎾" : "");
-            var opp_disp = state.opp_n + (state.active==3 ? "🎾" : "");
-            document.getElementById('disp-names').innerText = p1_disp + " & " + p2_disp + " vs " + opp_disp;
-
-            // ボタンの更新
-            document.getElementById('tag1').innerHTML = state.p1_n + (state.active==1 ? '<span class="ball-icon">🎾</span>' : '');
-            document.getElementById('tag2').innerHTML = state.p2_n + (state.active==2 ? '<span class="ball-icon">🎾</span>' : '');
-            document.getElementById('tag3').innerHTML = "相手サーブ" + (state.active==3 ? '<span class="ball-icon">🎾</span>' : '');
+            var srvBadge = '<span class="srv-badge">SRV</span>';
+            document.getElementById('tag1').innerHTML = state.p1_n + (state.active==1 ? srvBadge : '');
+            document.getElementById('tag2').innerHTML = state.p2_n + (state.active==2 ? srvBadge : '');
+            document.getElementById('tag3').innerHTML = state.opp_n + (state.active==3 ? srvBadge : '');
             
             document.getElementById('tag1').className = state.active==1 ? 'p-btn active' : 'p-btn';
             document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
             document.getElementById('tag3').className = state.active==3 ? 'p-btn active' : 'p-btn';
 
-            // 相手サーブ時はサーブ確率入力エリアを薄くする（または非表示）
             document.getElementById('serve-input-area').style.opacity = (state.active === 3) ? "0.3" : "1";
 
-            // サーブ確率表示
-            var s1 = Math.round((state.serve.p1_in/(state.serve.p1_total||1))*100) + "%";
-            var s2 = Math.round((state.serve.p2_in/(state.serve.p2_total||1))*100) + "%";
-            document.getElementById('srv-p1-mini').innerHTML = "1st:" + s1 + (state.active==1?"🎾":"");
-            document.getElementById('srv-p2-mini').innerHTML = "1st:" + s2 + (state.active==2?"🎾":"");
+            var s1_val = state.serve.p1_in + "/" + state.serve.p1_total;
+            var s2_val = state.serve.p2_in + "/" + state.serve.p2_total;
+            var s1_pct = Math.round((state.serve.p1_in/(state.serve.p1_total||1))*100) + "%";
+            var s2_pct = Math.round((state.serve.p2_in/(state.serve.p2_total||1))*100) + "%";
+            
+            document.getElementById('srv-p1-mini').innerHTML = "1st:" + s1_pct + (state.active==1 ? " [S]" : "") + "<br>(" + s1_val + ")";
+            document.getElementById('srv-p2-mini').innerHTML = "1st:" + s2_pct + (state.active==2 ? " [S]" : "") + "<br>(" + s2_val + ")";
+            document.getElementById('disp-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
 
-            // レポート更新
-            document.getElementById('rep-match-name').innerText = state.match_n + " (" + state.match_type + "Gマッチ)";
+            // レポート集計
+            document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             
-            var p1_aces = (state.stats.p1['サービスエース']||0) + (state.stats.p1['レシーブエース']||0) + (state.stats.p1['エース']||0) + (state.stats.p1['ボレー']||0) + (state.stats.p1['スマッシュ']||0);
-            var p2_aces = (state.stats.p2['サービスエース']||0) + (state.stats.p2['レシーブエース']||0) + (state.stats.p2['エース']||0) + (state.stats.p2['ボレー']||0) + (state.stats.p2['スマッシュ']||0);
-            var p1_miss = (state.stats.p1['ダブルフォルト']||0) + (state.stats.p1['レシーブミス']||0) + (state.stats.p1['ストロークミス']||0) + (state.stats.p1['ボレーミス']||0) + (state.stats.p1['スマッシュミス']||0);
-            var p2_miss = (state.stats.p2['ダブルフォルト']||0) + (state.stats.p2['レシーブミス']||0) + (state.stats.p2['ストロークミス']||0) + (state.stats.p2['ボレーミス']||0) + (state.stats.p2['スマッシュミス']||0);
+            var head = "<tr><th style='width:34%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
+            document.getElementById('stats-head').innerHTML = head;
 
-            var tableRows = "<tr><th style='width:40%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th></tr>";
-            tableRows += "<tr class='srv-row'><td>1st成功率</td><td>"+s1+"</td><td>"+s2+"</td></tr>";
+            var rows = "<tr class='srv-row'><td>1st成功率</td><td>"+s1_pct+" ("+s1_val+")</td><td>"+s2_pct+" ("+s2_val+")</td><td>-</td></tr>";
             
-            ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
-                tableRows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td></tr>";
+            var items = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
+            items.forEach(item => {
+                rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
-            tableRows += "<tr class='total-row'><td>自分たちのエース (計)</td><td colspan='2' style='color:#007AFF; font-size:16px;'>" + (p1_aces+p2_aces) + "</td></tr>";
-            tableRows += "<tr class='total-row'><td>自分たちのミス (計)</td><td colspan='2' style='color:#FF3B30; font-size:16px;'>" + (p1_miss+p2_miss) + "</td></tr>";
-            tableRows += "<tr class='total-row'><td>相手のエース (計)</td><td colspan='2'>"+state.stats.other['相手のエース']+"</td></tr>";
-            tableRows += "<tr class='total-row'><td>相手のミス (計)</td><td colspan='2'>"+state.stats.other['相手のミス']+"</td></tr>";
-            document.getElementById('stats-body').innerHTML = tableRows;
+
+            var p12_aces = 0, p12_miss = 0;
+            ['サービスエース','レシーブエース','エース','ボレー','スマッシュ'].forEach(k => { p12_aces += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); });
+            ['ダブルフォルト','レシーブミス','ストロークミス','ボレーミス','スマッシュミス'].forEach(k => { p12_miss += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); });
+            
+            var opp_aces = 0, opp_miss = 0;
+            ['サービスエース','レシーブエース','エース','ボレー','スマッシュ'].forEach(k => { opp_aces += (state.stats.opp[k]||0); });
+            ['ダブルフォルト','レシーブミス','ストロークミス','ボレーミス','スマッシュミス'].forEach(k => { opp_miss += (state.stats.opp[k]||0); });
+
+            rows += "<tr class='total-row'><td>エース合計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
+            rows += "<tr class='total-row'><td>ミス合計</td><td colspan='2' style='color:#FF3B30;'>" + p12_miss + "</td><td style='color:#FF3B30;'>" + opp_miss + "</td></tr>";
+            
+            document.getElementById('stats-body').innerHTML = rows;
+            var h = "";
+            state.history.forEach((x, i) => { h += '<div style="border:1px solid #333; padding:2px 5px; font-size:10px; background:#eee;">G'+(i+1)+': '+x+'</div>'; });
+            document.getElementById('history-area').innerHTML = h;
         }
         init();
     </script>
