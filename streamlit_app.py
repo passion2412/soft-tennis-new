@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v15", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v16", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -11,59 +11,78 @@ html_code = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { font-family: -apple-system, sans-serif; background: white; padding: 2px; margin: 0; }
-        .score-box { background: #1a1a1a; color: white; border-radius: 8px; text-align: center; padding: 12px 8px; margin-bottom: 6px; position: relative; }
-        .main-score { font-size: 48px; font-weight: 900; line-height: 1; margin: 5px 0; }
-        .game-score { font-size: 24px; color: #4CAF50; font-weight: 900; margin-top: 5px; }
-        .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; min-height: 14px; }
-        .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+        .score-box { 
+            background: #1a1a1a; color: white; border-radius: 8px; 
+            display: grid; grid-template-columns: 100px 1fr 60px; 
+            padding: 12px 8px; margin-bottom: 6px; align-items: center;
+        }
         
-        .srv-mini { position: absolute; font-size: 11px; color: white; font-weight: bold; top: 12px; line-height: 1.2; width: 70px; }
-        #srv-p1-mini { left: 8px; text-align: left; }
-        #srv-p2-mini { right: 8px; text-align: right; }
+        /* 左側：自分たちのサーブ統計エリア */
+        .srv-stats-area { text-align: left; font-size: 10px; line-height: 1.3; border-right: 1px solid #333; }
+        .srv-item { margin-bottom: 4px; color: #bbb; }
+        .srv-item.active { color: #FFD700; font-weight: bold; }
+        .srv-val { font-size: 11px; color: white; }
+
+        /* 中央：メインスコア */
+        .score-center { text-align: center; }
+        .main-score { font-size: 42px; font-weight: 900; line-height: 1; margin: 0; }
+        .game-score { font-size: 20px; color: #4CAF50; font-weight: 900; margin-bottom: 2px; }
+        
+        /* 右側：ゲームモード/その他 */
+        .info-right { text-align: right; font-size: 10px; color: #E67E22; font-weight: bold; }
+
+        .names-display { font-size: 12px; opacity: 0.8; text-align: center; margin: 4px 0 8px 0; background: #f0f0f0; padding: 4px; border-radius: 4px; }
 
         .player-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 10px 2px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 13px; transition: 0.2s; position: relative; }
+        .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 10px 2px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 13px; position: relative; }
         .p-btn.active { background: #E67E22; color: white; }
-        
-        /* サービス権の新しいデザインバッジ */
-        .srv-badge { background: #FFD700; color: #000; font-size: 9px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+        .srv-badge { background: #FFD700; color: #000; font-size: 9px; padding: 1px 3px; border-radius: 3px; margin-left: 3px; }
 
         .serve-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
         .s-btn { height: 38px; border-radius: 19px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
 
-        .label-grid { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
-        .label-win { color: #007AFF; }
-        .label-loss { color: #FF3B30; }
-
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
-        .btn { height: 44px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
+        .btn { height: 44px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 12px; border: none; }
+
         .btn-win { background-color: #007AFF; }
         .btn-loss { background-color: #FF3B30; }
 
-        .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+        
         .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; width: 100%; box-sizing: border-box; }
         .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
         table { width: 100%; border-collapse: collapse; font-size: 10px; }
         th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; }
         .total-row { background: #f9f9f9; font-weight: bold; font-size: 12px; }
-        .srv-row { background: #f0f8ff; font-weight: bold; }
         
         details { margin-top: 25px; padding: 10px; border: 1px solid #eee; }
-        input, textarea, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
     <div id="main-ui">
         <div class="score-box">
-            <div id="srv-p1-mini" class="srv-mini"></div>
-            <div id="srv-p2-mini" class="srv-mini"></div>
-            <div id="game-mode" class="mode-display"></div>
-            <div id="gms" class="game-score">G: 0 — 0</div>
-            <div id="pts" class="main-score">0 — 0</div>
-            <div id="disp-names" class="names-display"></div>
+            <div class="srv-stats-area">
+                <div id="srv-p1-box" class="srv-item">
+                    自分<span id="p1-srv-tag"></span><br><span id="s1-pct" class="srv-val">0%</span> <span id="s1-cnt">(0/0)</span>
+                </div>
+                <div id="srv-p2-box" class="srv-item">
+                    ペア<span id="p2-srv-tag"></span><br><span id="s2-pct" class="srv-val">0%</span> <span id="s2-cnt">(0/0)</span>
+                </div>
+            </div>
+            <div class="score-center">
+                <div id="gms" class="game-score">G: 0 — 0</div>
+                <div id="pts" class="main-score">0 — 0</div>
+            </div>
+            <div class="info-right">
+                <div id="game-mode"></div>
+                <div id="opp-srv-tag"></div>
+            </div>
         </div>
+
+        <div id="disp-names" class="names-display"></div>
 
         <div class="player-selector">
             <div id="tag1" class="p-btn" onclick="setPlayer(1)">自分</div>
@@ -76,10 +95,6 @@ html_code = """
             <button class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
 
-        <div class="label-grid">
-            <div class="label-win">得点</div>
-            <div class="label-loss">失点</div>
-        </div>
         <div class="grid" id="button-area"></div>
         <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
     </div>
@@ -100,16 +115,10 @@ html_code = """
 
     <details>
         <summary>⚙️ 試合設定</summary>
-        <label>試合形式:</label>
-        <select id="match-type" onchange="updateSettings()">
-            <option value="5">5ゲームマッチ</option>
-            <option value="7">7ゲームマッチ</option>
-        </select>
         <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
         <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
-        <button onclick="location.reload()" style="background:#f44336; color:white; width:100%; padding:12px; border:none; border-radius:4px; margin-top:10px;">全消去</button>
     </details>
 
     <script>
@@ -152,21 +161,10 @@ html_code = """
         function count(label, isWin) {
             stack.push(JSON.stringify(state));
             var pKey = (state.active == 1) ? 'p1' : (state.active == 2 ? 'p2' : 'opp');
-            
-            // 誰のステータスにカウントするか
             state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
-            
-            // スコアへの反映 (自分たちの得点か相手の得点か)
-            if (state.active == 3) {
-                // 相手が選択されている時：「得点」ボタンは相手の得点、「失点」ボタンは自分たちの得点
-                if(isWin) state.p2++; else state.p1++;
-            } else {
-                // 自分/ペアが選択されている時：通常通り
-                if(isWin) state.p1++; else state.p2++;
-            }
-            
-            checkScore();
-            render();
+            if (state.active == 3) { if(isWin) state.p2++; else state.p1++; }
+            else { if(isWin) state.p1++; else state.p2++; }
+            checkScore(); render();
         }
 
         function checkScore() {
@@ -187,7 +185,6 @@ html_code = """
         function undo() { if(stack.length > 0) { state = JSON.parse(stack.pop()); render(); } }
 
         function updateSettings() {
-            state.match_type = parseInt(document.getElementById('match-type').value);
             state.match_n = document.getElementById('in-match').value || "未設定の試合";
             state.p1_n = document.getElementById('in-p1').value || "自分";
             state.p2_n = document.getElementById('in-p2').value || "ペア";
@@ -198,58 +195,38 @@ html_code = """
         function render() {
             document.getElementById('pts').innerText = state.p1 + " — " + state.p2;
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
-            document.getElementById('game-mode').innerText = state.is_final ? "★ファイナルゲーム (7点先取)" : "";
+            document.getElementById('game-mode').innerText = state.is_final ? "FINAL" : "";
             
-            var srvBadge = '<span class="srv-badge">SRV</span>';
-            document.getElementById('tag1').innerHTML = state.p1_n + (state.active==1 ? srvBadge : '');
-            document.getElementById('tag2').innerHTML = state.p2_n + (state.active==2 ? srvBadge : '');
-            document.getElementById('tag3').innerHTML = state.opp_n + (state.active==3 ? srvBadge : '');
+            var badge = '<span class="srv-badge">SRV</span>';
+            document.getElementById('tag1').innerHTML = state.p1_n + (state.active==1 ? badge : '');
+            document.getElementById('tag2').innerHTML = state.p2_n + (state.active==2 ? badge : '');
+            document.getElementById('tag3').innerHTML = state.opp_n + (state.active==3 ? badge : '');
             
-            document.getElementById('tag1').className = state.active==1 ? 'p-btn active' : 'p-btn';
-            document.getElementById('tag2').className = state.active==2 ? 'p-btn active' : 'p-btn';
-            document.getElementById('tag3').className = state.active==3 ? 'p-btn active' : 'p-btn';
+            // スコアボード内のSRVタグ連動
+            document.getElementById('p1-srv-tag').innerHTML = (state.active==1 ? badge : '');
+            document.getElementById('p2-srv-tag').innerHTML = (state.active==2 ? badge : '');
+            document.getElementById('opp-srv-tag').innerHTML = (state.active==3 ? "相手" + badge : '');
+            
+            document.getElementById('srv-p1-box').className = state.active==1 ? 'srv-item active' : 'srv-item';
+            document.getElementById('srv-p2-box').className = state.active==2 ? 'srv-item active' : 'srv-item';
 
-            document.getElementById('serve-input-area').style.opacity = (state.active === 3) ? "0.3" : "1";
-
-            var s1_val = state.serve.p1_in + "/" + state.serve.p1_total;
-            var s2_val = state.serve.p2_in + "/" + state.serve.p2_total;
             var s1_pct = Math.round((state.serve.p1_in/(state.serve.p1_total||1))*100) + "%";
             var s2_pct = Math.round((state.serve.p2_in/(state.serve.p2_total||1))*100) + "%";
-            
-            document.getElementById('srv-p1-mini').innerHTML = "1st:" + s1_pct + (state.active==1 ? " [S]" : "") + "<br>(" + s1_val + ")";
-            document.getElementById('srv-p2-mini').innerHTML = "1st:" + s2_pct + (state.active==2 ? " [S]" : "") + "<br>(" + s2_val + ")";
-            document.getElementById('disp-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
+            document.getElementById('s1-pct').innerText = s1_pct;
+            document.getElementById('s1-cnt').innerText = "(" + state.serve.p1_in + "/" + state.serve.p1_total + ")";
+            document.getElementById('s2-pct').innerText = s2_pct;
+            document.getElementById('s2-cnt').innerText = "(" + state.serve.p2_in + "/" + state.serve.p2_total + ")";
 
-            // レポート集計
+            document.getElementById('disp-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
-            document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
+            document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
             
-            var head = "<tr><th style='width:34%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
-            document.getElementById('stats-head').innerHTML = head;
-
-            var rows = "<tr class='srv-row'><td>1st成功率</td><td>"+s1_pct+" ("+s1_val+")</td><td>"+s2_pct+" ("+s2_val+")</td><td>-</td></tr>";
-            
-            var items = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
-            items.forEach(item => {
+            var rows = "<tr><td>1st成功</td><td>"+s1_pct+"</td><td>"+s2_pct+"</td><td>-</td></tr>";
+            ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
-
-            var p12_aces = 0, p12_miss = 0;
-            ['サービスエース','レシーブエース','エース','ボレー','スマッシュ'].forEach(k => { p12_aces += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); });
-            ['ダブルフォルト','レシーブミス','ストロークミス','ボレーミス','スマッシュミス'].forEach(k => { p12_miss += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); });
-            
-            var opp_aces = 0, opp_miss = 0;
-            ['サービスエース','レシーブエース','エース','ボレー','スマッシュ'].forEach(k => { opp_aces += (state.stats.opp[k]||0); });
-            ['ダブルフォルト','レシーブミス','ストロークミス','ボレーミス','スマッシュミス'].forEach(k => { opp_miss += (state.stats.opp[k]||0); });
-
-            rows += "<tr class='total-row'><td>エース合計</td><td colspan='2' style='color:#007AFF;'>" + p12_aces + "</td><td style='color:#007AFF;'>" + opp_aces + "</td></tr>";
-            rows += "<tr class='total-row'><td>ミス合計</td><td colspan='2' style='color:#FF3B30;'>" + p12_miss + "</td><td style='color:#FF3B30;'>" + opp_miss + "</td></tr>";
-            
             document.getElementById('stats-body').innerHTML = rows;
-            var h = "";
-            state.history.forEach((x, i) => { h += '<div style="border:1px solid #333; padding:2px 5px; font-size:10px; background:#eee;">G'+(i+1)+': '+x+'</div>'; });
-            document.getElementById('history-area').innerHTML = h;
         }
         init();
     </script>
