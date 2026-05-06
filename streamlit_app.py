@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v11", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v12", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -25,7 +25,6 @@ html_code = """
         .score-box { background: #1a1a1a; color: white; border-radius: 8px; text-align: center; padding: 12px 8px; margin-bottom: 6px; position: relative; }
         .main-score { font-size: 48px; font-weight: 900; line-height: 1; margin: 5px 0; }
         .game-score { font-size: 18px; color: #4CAF50; font-weight: bold; }
-        /* 通常時は非表示、ファイナル時のみ表示するスタイル */
         .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; margin-bottom: 2px; min-height: 14px; }
         .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
         
@@ -41,6 +40,10 @@ html_code = """
         .s-btn { height: 38px; border-radius: 19px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
+
+        .label-grid { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 2px; }
+        .label-win { color: #007AFF; }
+        .label-loss { color: #FF3B30; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
         .btn { height: 44px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white !important; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
@@ -84,6 +87,10 @@ html_code = """
             <button class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
 
+        <div class="label-grid">
+            <div class="label-win">得点</div>
+            <div class="label-loss">失点</div>
+        </div>
         <div class="grid" id="button-area"></div>
         <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
     </div>
@@ -126,8 +133,10 @@ html_code = """
             history: []
         };
         var stack = [];
-        var wins = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', '相手のミス'];
-        var loss = ['ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス', '相手のエース'];
+        
+        // ご要望の並び順に修正
+        var wins = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', '相手のミス'];
+        var loss = ['ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス', '相手のエース'];
 
         function init() {
             var area = document.getElementById('button-area');
@@ -217,7 +226,6 @@ html_code = """
         function render() {
             document.getElementById('pts').innerText = state.p1 + " — " + state.p2;
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
-            // ファイナル時のみテキストを表示し、それ以外は空にする
             document.getElementById('game-mode').innerText = state.is_final ? "★ファイナルゲーム (7点先取)" : "";
             document.getElementById('disp-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('tag1').innerText = state.p1_n;
@@ -230,11 +238,28 @@ html_code = """
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('stats-head').innerHTML = "<tr><th style='width:40%'>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th></tr>";
+            
             var rows = "<tr class='srv-row'><td style='text-align:left;'>1st成功率</td><td>"+getSrvText('p1')+"</td><td>"+getSrvText('p2')+"</td></tr>";
-            var items = ['サービスエース', 'レシーブエース', 'スマッシュ', 'エース', 'ボレー', 'ダブルフォルト', 'レシーブミス', 'スマッシュミス', 'ストロークミス', 'ボレーミス'];
-            items.forEach(function(s){ rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>"; });
-            rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2'>"+state.stats.other['相手のミス']+"</td></tr>";
+            
+            // 各項目の集計
+            var tableItems = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
+            
+            // 自分たちのエースとミスの合計を計算
+            var p1_aces = (state.stats.p1['サービスエース']||0) + (state.stats.p1['レシーブエース']||0) + (state.stats.p1['エース']||0) + (state.stats.p1['ボレー']||0) + (state.stats.p1['スマッシュ']||0);
+            var p2_aces = (state.stats.p2['サービスエース']||0) + (state.stats.p2['レシーブエース']||0) + (state.stats.p2['エース']||0) + (state.stats.p2['ボレー']||0) + (state.stats.p2['スマッシュ']||0);
+            var p1_miss = (state.stats.p1['ダブルフォルト']||0) + (state.stats.p1['レシーブミス']||0) + (state.stats.p1['ストロークミス']||0) + (state.stats.p1['ボレーミス']||0) + (state.stats.p1['スマッシュミス']||0);
+            var p2_miss = (state.stats.p2['ダブルフォルト']||0) + (state.stats.p2['レシーブミス']||0) + (state.stats.p2['ストロークミス']||0) + (state.stats.p2['ボレーミス']||0) + (state.stats.p2['スマッシュミス']||0);
+
+            tableItems.forEach(function(s){
+                rows += "<tr><td style='text-align:left;'>"+s+"</td><td>"+(state.stats.p1[s]||0)+"</td><td>"+(state.stats.p2[s]||0)+"</td></tr>";
+            });
+            
+            // 下部の集計エリア
+            rows += "<tr class='total-row'><td style='text-align:left;'>自分たちのエース (計)</td><td>"+p1_aces+"</td><td>"+p2_aces+"</td></tr>";
+            rows += "<tr class='total-row'><td style='text-align:left;'>自分たちのミス (計)</td><td>"+p1_miss+"</td><td>"+p2_miss+"</td></tr>";
             rows += "<tr class='total-row'><td style='text-align:left;'>相手のエース (計)</td><td colspan='2'>"+state.stats.other['相手のエース']+"</td></tr>";
+            rows += "<tr class='total-row'><td style='text-align:left;'>相手のミス (計)</td><td colspan='2'>"+state.stats.other['相手のミス']+"</td></tr>";
+            
             document.getElementById('stats-body').innerHTML = rows;
             var h = "";
             state.history.forEach(function(x, i){ h += '<div class="history-item">G'+(i+1)+': '+x+'</div>'; });
