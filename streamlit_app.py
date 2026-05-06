@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v18", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v19", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -44,11 +44,14 @@ html_code = """
         
         .undo-btn { background: #666; color: white; border: none; padding: 12px; width: 100%; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; }
         
+        /* メモエリア */
+        .memo-area { margin-bottom: 20px; }
+        textarea { width: 100%; height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 12px; resize: none; }
+
         .report-card { border: 2px solid #333; border-radius: 8px; padding: 10px; background: #fff; width: 100%; box-sizing: border-box; }
         .report-title { font-size: 14px; font-weight: bold; background: #333; color: white; margin: -10px -10px 10px -10px; padding: 8px; border-radius: 6px 6px 0 0; text-align: center; }
         .final-score-area { text-align: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 10px; }
         .final-gms { font-size: 36px; font-weight: 900; color: #d32f2f; line-height: 1; }
-        .final-names { font-size: 12px; font-weight: bold; margin-top: 5px; color: #333; }
         
         table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
         th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; }
@@ -61,6 +64,7 @@ html_code = """
         
         details { margin-top: 25px; padding: 10px; border: 1px solid #eee; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .reset-btn { background: #f44336; color: white; width: 100%; padding: 12px; border: none; border-radius: 4px; margin-top: 15px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -99,13 +103,17 @@ html_code = """
 
         <div class="grid" id="button-area"></div>
         <button class="undo-btn" onclick="undo()">↩ 戻る (修正)</button>
+
+        <div class="memo-area">
+            <textarea id="match-memo" placeholder="試合のメモ（課題や相手の癖など）"></textarea>
+        </div>
     </div>
 
     <div class="report-card">
         <div class="report-title">MATCH REPORT</div>
         <div class="final-score-area">
             <div id="final-gms" class="final-gms">0 — 0</div>
-            <div id="final-names" class="final-names"></div>
+            <div id="final-names" class="final-names" style="font-size:12px; font-weight:bold; margin-top:5px;"></div>
             <div id="rep-match-name" style="font-size:10px; color:#666; margin-top:4px;"></div>
         </div>
         <table>
@@ -125,6 +133,7 @@ html_code = """
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
         <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
+        <button class="reset-btn" onclick="if(confirm('全てのデータを消去しますか？')){location.reload();}">データを全消去</button>
     </details>
 
     <script>
@@ -215,12 +224,15 @@ html_code = """
             document.getElementById('srv-p1-box').className = state.active==1 ? 'srv-item active' : 'srv-item';
             document.getElementById('srv-p2-box').className = state.active==2 ? 'srv-item active' : 'srv-item';
 
+            var s1_v = state.serve.p1_in + "/" + state.serve.p1_total;
+            var s2_v = state.serve.p2_in + "/" + state.serve.p2_total;
             var s1_pct = Math.round((state.serve.p1_in/(state.serve.p1_total||1))*100) + "%";
             var s2_pct = Math.round((state.serve.p2_in/(state.serve.p2_total||1))*100) + "%";
+            
             document.getElementById('s1-pct').innerText = s1_pct;
-            document.getElementById('s1-cnt').innerText = "(" + state.serve.p1_in + "/" + state.serve.p1_total + ")";
+            document.getElementById('s1-cnt').innerText = "(" + s1_v + ")";
             document.getElementById('s2-pct').innerText = s2_pct;
-            document.getElementById('s2-cnt').innerText = "(" + state.serve.p2_in + "/" + state.serve.p2_total + ")";
+            document.getElementById('s2-cnt').innerText = "(" + s2_v + ")";
 
             document.getElementById('disp-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             
@@ -230,7 +242,9 @@ html_code = """
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
             
-            var rows = "<tr><td>1st成功</td><td>"+s1_pct+"</td><td>"+s2_pct+"</td><td>-</td></tr>";
+            // レポート内のサーブ率表示を修正
+            var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
+            
             ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
@@ -250,11 +264,8 @@ html_code = """
 
             document.getElementById('stats-body').innerHTML = rows;
 
-            // 履歴（各ゲームのポイント数）
             var h = "";
-            state.history.forEach((score, i) => { 
-                h += '<div class="history-item">G'+(i+1)+': '+score+'</div>'; 
-            });
+            state.history.forEach((score, i) => { h += '<div class="history-item">G'+(i+1)+': '+score+'</div>'; });
             document.getElementById('history-area').innerHTML = h || '<div style="font-size:10px; color:#999;">データなし</div>';
         }
         init();
