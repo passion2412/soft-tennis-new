@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v25", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v26", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -74,8 +74,8 @@ html_code = """
     <div id="main-ui">
         <div class="score-box">
             <div class="srv-stats-area">
-                <div id="srv-p1-box" class="srv-item">自分<br><span id="s1-pct" class="srv-val">0%</span> <span id="s1-cnt">(0/0)</span></div>
-                <div id="srv-p2-box" class="srv-item">ペア<br><span id="s2-pct" class="srv-val">0%</span> <span id="s2-cnt">(0/0)</span></div>
+                <div id="srv-p1-box" class="srv-item">後衛<br><span id="s1-pct" class="srv-val">0%</span> <span id="s1-cnt">(0/0)</span></div>
+                <div id="srv-p2-box" class="srv-item">前衛<br><span id="s2-pct" class="srv-val">0%</span> <span id="s2-cnt">(0/0)</span></div>
             </div>
             <div class="score-center">
                 <div id="gms" class="game-score">G: 0 — 0</div>
@@ -87,8 +87,8 @@ html_code = """
         </div>
 
         <div class="player-selector">
-            <div id="tag1" class="p-btn" onclick="setPlayer(1)">自分</div>
-            <div id="tag2" class="p-btn" onclick="setPlayer(2)">ペア</div>
+            <div id="tag1" class="p-btn" onclick="setPlayer(1)">後衛</div>
+            <div id="tag2" class="p-btn" onclick="setPlayer(2)">前衛</div>
             <div id="tag3" class="p-btn" onclick="setPlayer(3)">相手</div>
         </div>
 
@@ -132,8 +132,8 @@ html_code = """
     <details>
         <summary>⚙️ 試合設定</summary>
         <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
-        <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
-        <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
+        <input type="text" id="in-p1" placeholder="後衛の名前" oninput="updateSettings()">
+        <input type="text" id="in-p2" placeholder="前衛の名前" oninput="updateSettings()">
         <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
         <button class="reset-btn" onclick="if(confirm('全てのデータを消去しますか？')){location.reload();}">データを全消去</button>
     </details>
@@ -141,7 +141,7 @@ html_code = """
     <script>
         var state = {
             p1:0, p2:0, g1:0, g2:0, active:1, match_type: 5, is_final: false,
-            p1_n: "自分", p2_n: "ペア", opp_n: "相手", match_n: "未設定の試合",
+            p1_n: "後衛", p2_n: "前衛", opp_n: "相手", match_n: "未設定の試合",
             stats: { p1: {}, p2: {}, opp: {} },
             serve: { p1_in: 0, p1_total: 0, p2_in: 0, p2_total: 0 },
             history: [],
@@ -211,8 +211,8 @@ html_code = """
 
         function updateSettings() {
             state.match_n = document.getElementById('in-match').value || "未設定の試合";
-            state.p1_n = document.getElementById('in-p1').value || "自分";
-            state.p2_n = document.getElementById('in-p2').value || "ペア";
+            state.p1_n = document.getElementById('in-p1').value || "後衛";
+            state.p2_n = document.getElementById('in-p2').value || "前衛";
             state.opp_n = document.getElementById('in-opp').value || "相手";
             render();
         }
@@ -253,7 +253,6 @@ html_code = """
             });
 
             var p12_aces = 0, p12_miss = 0, opp_aces = 0, opp_miss = 0;
-            // ネットインを除外して計算
             ['サービスエース','レシーブエース','ストローク','ボレー','スマッシュ'].forEach(k => { 
                 p12_aces += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_aces += (state.stats.opp[k]||0);
