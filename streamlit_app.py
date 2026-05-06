@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v20", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v21", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -29,7 +29,7 @@ html_code = """
         .p-btn { border: 2px solid #E67E22; background: white; color: #E67E22; padding: 12px 2px; border-radius: 6px; font-weight: bold; text-align: center; cursor: pointer; font-size: 14px; }
         .p-btn.active { background: #E67E22; color: white; }
 
-        .serve-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        .serve-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; min-height: 38px; }
         .s-btn { height: 38px; border-radius: 19px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .s-in { background: #28a745; }
         .s-fault { background: #dc3545; }
@@ -88,8 +88,8 @@ html_code = """
         </div>
 
         <div class="serve-btn-grid" id="serve-input-area">
-            <button class="s-btn s-in" onclick="countServe(true)">1st IN</button>
-            <button class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
+            <button id="s-in-btn" class="s-btn s-in" onclick="countServe(true)">1st IN</button>
+            <button id="s-fault-btn" class="s-btn s-fault" onclick="countServe(false)">1st フォルト</button>
         </div>
 
         <div class="grid" id="button-area"></div>
@@ -133,11 +133,13 @@ html_code = """
             p1_n: "自分", p2_n: "ペア", opp_n: "相手", match_n: "未設定の試合",
             stats: { p1: {}, p2: {}, opp: {} },
             serve: { p1_in: 0, p1_total: 0, p2_in: 0, p2_total: 0 },
-            history: [] // {score: "4-2", side: "S" or "R"}
+            history: [],
+            current_game_serves: 0 // 今のゲームでサーブボタンが押された回数
         };
         var stack = [];
-        var wins = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', '相手のミス'];
-        var loss = ['ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス', '相手のエース'];
+        // 「相手のミス」「相手のエース」を削除
+        var wins = ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ'];
+        var loss = ['ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
 
         function init() {
             var area = document.getElementById('button-area');
@@ -161,6 +163,7 @@ html_code = """
             var p = state.active == 1 ? 'p1' : 'p2';
             state.serve[p+'_total']++;
             if(isIn) state.serve[p+'_in']++;
+            state.current_game_serves++; // 判定用
             render();
         }
 
@@ -181,14 +184,15 @@ html_code = """
         }
 
         function finishGame() {
-            // サーブ側だったか(自分orペア選択中)を記録
-            var side = (state.active === 1 || state.active === 2) ? "S" : "R";
+            // サーブ入力が1回でもあればS(Serve)、なければR(Receive)
+            var side = (state.current_game_serves > 0) ? "S" : "R";
             state.history.push({
                 score: state.p1 + "-" + state.p2 + (state.is_final ? "(F)" : ""),
                 side: side
             });
             if(state.p1 > state.p2) state.g1++; else state.g2++;
             state.p1 = 0; state.p2 = 0;
+            state.current_game_serves = 0; // リセット
             var win_limit = Math.ceil(state.match_type / 2);
             if(state.g1 >= win_limit || state.g2 >= win_limit) state.is_final = false;
         }
@@ -208,7 +212,9 @@ html_code = """
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
             document.getElementById('game-mode').innerText = state.is_final ? "FINAL" : "";
             
-            // プレイヤー選択ボタン
+            // サーブボタンの表示・非表示（相手選択時は隠す）
+            document.getElementById('serve-input-area').style.visibility = (state.active === 3) ? "hidden" : "visible";
+
             document.getElementById('tag1').className = 'p-btn' + (state.active==1 ? ' active' : '');
             document.getElementById('tag2').className = 'p-btn' + (state.active==2 ? ' active' : '');
             document.getElementById('tag3').className = 'p-btn' + (state.active==3 ? ' active' : '');
@@ -216,7 +222,6 @@ html_code = """
             document.getElementById('tag2').innerText = state.p2_n;
             document.getElementById('tag3').innerText = state.opp_n;
             
-            // スコアボード左側の統計
             document.getElementById('srv-p1-box').className = state.active==1 ? 'srv-item active' : 'srv-item';
             document.getElementById('srv-p2-box').className = state.active==2 ? 'srv-item active' : 'srv-item';
             var s1_v = state.serve.p1_in + "/" + state.serve.p1_total;
@@ -228,13 +233,13 @@ html_code = """
             document.getElementById('s2-pct').innerText = s2_pct;
             document.getElementById('s2-cnt').innerText = "(" + s2_v + ")";
 
-            // レポート
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>"+state.opp_n+"</th></tr>";
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
+            // 修正された項目リスト
             ['サービスエース', 'レシーブエース', 'エース', 'ボレー', 'スマッシュ', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'].forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
@@ -252,7 +257,6 @@ html_code = """
             rows += "<tr class='total-row'><td>ミス計</td><td colspan='2' style='color:#FF3B30;'>" + p12_miss + "</td><td style='color:#FF3B30;'>" + opp_miss + "</td></tr>";
             document.getElementById('stats-body').innerHTML = rows;
 
-            // 履歴 (S/R表記追加)
             var h = "";
             state.history.forEach((obj, i) => { 
                 var label = obj.side === "S" ? '<span class="srv-mark">S</span>' : '<span class="srv-mark" style="color:#666;">R</span>';
@@ -260,7 +264,6 @@ html_code = """
             });
             document.getElementById('history-area').innerHTML = h || '<div style="font-size:10px; color:#999;">データなし</div>';
 
-            // レポート内メモ表示
             var memoVal = document.getElementById('match-memo').value;
             var memoDisp = document.getElementById('report-memo-display');
             if(memoVal.trim() !== "") {
