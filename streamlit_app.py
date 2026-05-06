@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Tennis Counter Pro v24", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v25", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -134,7 +134,7 @@ html_code = """
         <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="ペア" oninput="updateSettings()">
-        <input type="text" id="in-opp" placeholder="相手（レポート用）" oninput="updateSettings()">
+        <input type="text" id="in-opp" placeholder="相手" oninput="updateSettings()">
         <button class="reset-btn" onclick="if(confirm('全てのデータを消去しますか？')){location.reload();}">データを全消去</button>
     </details>
 
@@ -162,7 +162,6 @@ html_code = """
                 state.stats.p2[w]=0; state.stats.p2[l]=0;
                 state.stats.opp[w]=0; state.stats.opp[l]=0;
             });
-            // ネットイン項目の初期化
             state.stats.p1['ネットイン']=0; state.stats.p2['ネットイン']=0; state.stats.opp['ネットイン']=0;
             render();
         }
@@ -248,14 +247,14 @@ html_code = """
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
             
-            // ネットインも含めて表示
             var items = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ネットイン', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
             items.forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             });
 
             var p12_aces = 0, p12_miss = 0, opp_aces = 0, opp_miss = 0;
-            ['サービスエース','レシーブエース','ストローク','ボレー','スマッシュ','ネットイン'].forEach(k => { 
+            // ネットインを除外して計算
+            ['サービスエース','レシーブエース','ストローク','ボレー','スマッシュ'].forEach(k => { 
                 p12_aces += (state.stats.p1[k]||0) + (state.stats.p2[k]||0); 
                 opp_aces += (state.stats.opp[k]||0);
             });
