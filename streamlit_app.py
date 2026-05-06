@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. ページ設定
-st.set_page_config(page_title="Tennis Counter Pro v10", layout="centered")
+st.set_page_config(page_title="Tennis Counter Pro v11", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -25,7 +25,8 @@ html_code = """
         .score-box { background: #1a1a1a; color: white; border-radius: 8px; text-align: center; padding: 12px 8px; margin-bottom: 6px; position: relative; }
         .main-score { font-size: 48px; font-weight: 900; line-height: 1; margin: 5px 0; }
         .game-score { font-size: 18px; color: #4CAF50; font-weight: bold; }
-        .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; margin-bottom: 2px; }
+        /* 通常時は非表示、ファイナル時のみ表示するスタイル */
+        .mode-display { font-size: 12px; color: #E67E22; font-weight: bold; margin-bottom: 2px; min-height: 14px; }
         .names-display { font-size: 12px; opacity: 0.8; margin-top: 4px; }
         
         .srv-mini { position: absolute; font-size: 14px; color: white; font-weight: bold; top: 12px; line-height: 1.2; }
@@ -67,7 +68,7 @@ html_code = """
         <div class="score-box">
             <div id="srv-p1-mini" class="srv-mini">1st: 0%<br>(0/0)</div>
             <div id="srv-p2-mini" class="srv-mini">1st: 0%<br>(0/0)</div>
-            <div id="game-mode" class="mode-display">通常ゲーム</div>
+            <div id="game-mode" class="mode-display"></div>
             <div id="gms" class="game-score">G: 0 — 0</div>
             <div id="pts" class="main-score">0 — 0</div>
             <div id="disp-names" class="names-display">自分 & ペア vs 相手</div>
@@ -105,8 +106,8 @@ html_code = """
         <summary>⚙️ 試合設定・リセット</summary>
         <label>試合形式:</label>
         <select id="match-type" onchange="updateSettings()">
-            <option value="5">5ゲームマッチ (2-2でファイナル)</option>
-            <option value="7">7ゲームマッチ (3-3でファイナル)</option>
+            <option value="5">5ゲームマッチ</option>
+            <option value="7">7ゲームマッチ</option>
         </select>
         <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="自分" oninput="updateSettings()">
@@ -159,25 +160,21 @@ html_code = """
                 state.stats[pKey][label] = (state.stats[pKey][label] || 0) + 1;
                 if(isWin) state.p1++; else state.p2++;
             }
-
             checkScore();
             render();
         }
 
         function checkScore() {
-            // ファイナルゲーム判定
-            var target_games = Math.floor(state.match_type / 2); // 5なら2, 7なら3
+            var target_games = Math.floor(state.match_type / 2);
             if (!state.is_final && state.g1 === target_games && state.g2 === target_games) {
                 state.is_final = true;
             }
 
             if (state.is_final) {
-                // ファイナルゲームルール (7点先取・デュース有り)
                 if ((state.p1 >= 7 || state.p2 >= 7) && Math.abs(state.p1 - state.p2) >= 2) {
                     finishGame();
                 }
             } else {
-                // 通常ゲームルール
                 if ((state.p1 >= 4 || state.p2 >= 4) && Math.abs(state.p1 - state.p2) >= 2) {
                     finishGame();
                 }
@@ -189,12 +186,10 @@ html_code = """
             if(state.p1 > state.p2) state.g1++; else state.g2++;
             state.p1 = 0; state.p2 = 0;
             
-            // 試合終了後のファイナル解除
             var win_limit = Math.ceil(state.match_type / 2);
             if(state.g1 >= win_limit || state.g2 >= win_limit) {
                 state.is_final = false; 
             } else {
-                // 次のゲームがファイナルか再チェック
                 var target_games = Math.floor(state.match_type / 2);
                 state.is_final = (state.g1 === target_games && state.g2 === target_games);
             }
@@ -222,7 +217,8 @@ html_code = """
         function render() {
             document.getElementById('pts').innerText = state.p1 + " — " + state.p2;
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
-            document.getElementById('game-mode').innerText = state.is_final ? "★ファイナルゲーム (7点先取)" : "通常ゲーム";
+            // ファイナル時のみテキストを表示し、それ以外は空にする
+            document.getElementById('game-mode').innerText = state.is_final ? "★ファイナルゲーム (7点先取)" : "";
             document.getElementById('disp-names').innerText = state.p1_n + " & " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('tag1').innerText = state.p1_n;
             document.getElementById('tag2').innerText = state.p2_n;
