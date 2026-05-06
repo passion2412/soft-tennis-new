@@ -1,7 +1,20 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from PIL import Image
+import os
 
-st.set_page_config(page_title="Tennis Counter Pro v27", layout="centered")
+# --- 設定: アイコンの読み込み ---
+icon_path = "icon.png"
+if os.path.exists(icon_path):
+    icon_image = Image.open(icon_path)
+else:
+    icon_image = "🎾"
+
+st.set_page_config(
+    page_title="Tennis Counter Pro",
+    page_icon=icon_image,
+    layout="centered"
+)
 
 html_code = """
 <!DOCTYPE html>
@@ -66,6 +79,9 @@ html_code = """
         .report-memo { background: #fff9c4; padding: 8px; border-radius: 4px; font-size: 11px; border-left: 4px solid #fbc02d; margin-top: 10px; white-space: pre-wrap; }
         
         details { margin-top: 25px; padding: 10px; border: 1px solid #eee; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .m-btn { padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .m-btn.active { background: #333; color: white; border-color: #333; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .reset-btn { background: #f44336; color: white; width: 100%; padding: 12px; border: none; border-radius: 4px; margin-top: 15px; font-weight: bold; cursor: pointer; }
     </style>
@@ -109,28 +125,29 @@ html_code = """
 
     <div class="report-card">
         <div class="report-title">MATCH REPORT</div>
-        
         <div class="report-header-area">
             <div id="rep-match-name" class="rep-match"></div>
             <div id="final-names" class="rep-names"></div>
             <div id="final-gms" class="final-gms">0 — 0</div>
         </div>
-
         <div class="history-section">
             <div class="history-label">GAME SCORE HISTORY</div>
             <div id="history-area" class="history-list"></div>
         </div>
-
         <table>
             <thead id="stats-head"></thead>
             <tbody id="stats-body"></tbody>
         </table>
-        
         <div id="report-memo-display" class="report-memo" style="display:none;"></div>
     </div>
 
     <details>
         <summary>⚙️ 試合設定</summary>
+        <div style="font-size:12px; margin: 10px 0 5px 0; font-weight:bold;">マッチ形式:</div>
+        <div class="settings-grid">
+            <button id="m5" class="m-btn active" onclick="setMatchType(5)">5ゲーム</button>
+            <button id="m7" class="m-btn" onclick="setMatchType(7)">7ゲーム</button>
+        </div>
         <input type="text" id="in-match" placeholder="試合名" oninput="updateSettings()">
         <input type="text" id="in-p1" placeholder="後衛の名前" oninput="updateSettings()">
         <input type="text" id="in-p2" placeholder="前衛の名前" oninput="updateSettings()">
@@ -166,6 +183,11 @@ html_code = """
             render();
         }
 
+        function setMatchType(n) {
+            state.match_type = n;
+            render();
+        }
+
         function setPlayer(n) { state.active = n; render(); }
 
         function countServe(isIn) {
@@ -188,7 +210,7 @@ html_code = """
         }
 
         function checkScore() {
-            var target = Math.floor(state.match_type / 2);
+            var target = Math.floor(state.match_type / 2); // 5→2, 7→3
             if (!state.is_final && state.g1 === target && state.g2 === target) state.is_final = true;
             var limit = state.is_final ? 7 : 4;
             if ((state.p1 >= limit || state.p2 >= limit) && Math.abs(state.p1 - state.p2) >= 2) finishGame();
@@ -203,6 +225,7 @@ html_code = """
             if(state.p1 > state.p2) state.g1++; else state.g2++;
             state.p1 = 0; state.p2 = 0;
             state.current_game_serves = 0;
+            
             var win_limit = Math.ceil(state.match_type / 2);
             if(state.g1 >= win_limit || state.g2 >= win_limit) state.is_final = false;
         }
@@ -220,16 +243,17 @@ html_code = """
         function render() {
             document.getElementById('pts').innerText = state.p1 + " — " + state.p2;
             document.getElementById('gms').innerText = "G: " + state.g1 + " — " + state.g2;
-            document.getElementById('game-mode').innerText = state.is_final ? "FINAL" : "";
+            document.getElementById('game-mode').innerText = (state.is_final ? "FINAL" : state.match_type + "G");
             
+            document.getElementById('m5').className = 'm-btn' + (state.match_type==5 ? ' active' : '');
+            document.getElementById('m7').className = 'm-btn' + (state.match_type==7 ? ' active' : '');
+
             document.getElementById('serve-input-area').style.visibility = (state.active === 3) ? "hidden" : "visible";
 
-            // 名前反映
             document.getElementById('lbl-s1').innerText = state.p1_n;
             document.getElementById('lbl-s2').innerText = state.p2_n;
             document.getElementById('tag1').innerText = state.p1_n;
             document.getElementById('tag2').innerText = state.p2_n;
-            document.getElementById('tag3').innerText = "相手";
             
             document.getElementById('tag1').className = 'p-btn' + (state.active==1 ? ' active' : '');
             document.getElementById('tag2').className = 'p-btn' + (state.active==2 ? ' active' : '');
@@ -250,7 +274,6 @@ html_code = """
             document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>相手</th></tr>";
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+" ("+s1_v+")</td><td>"+s2_pct+" ("+s2_v+")</td><td>-</td></tr>";
-            
             var items = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ネットイン', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
             items.forEach(item => {
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
