@@ -4,7 +4,6 @@ from PIL import Image
 import os
 
 # --- 1. アイコンの読み込み (ブラウザタブ用) ---
-# フォルダ構成に合わせてパスを static/ に設定
 icon_path = "static/icon-512.PNG" 
 if os.path.exists(icon_path):
     icon_image = Image.open(icon_path)
@@ -18,7 +17,6 @@ st.set_page_config(
 )
 
 # --- 2. PWA設定 (Manifest) のリンク設定 ---
-# フォルダ構成に合わせて href を static/ に、ファイル名を .PNG に修正
 pwa_head_tags = """
     <link rel="manifest" href="static/manifest.json">
     <link rel="apple-touch-icon" href="static/icon-512.PNG">
@@ -26,6 +24,7 @@ pwa_head_tags = """
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 """
 
+# HTML/JavaScriptのコード。f-stringを使っているため、JSの波括弧は {{ }} にしています。
 html_code = f"""
 <!DOCTYPE html>
 <html lang="ja">
@@ -219,7 +218,7 @@ html_code = f"""
             if (!state.is_final && state.g1 === target && state.g2 === target) state.is_final = true;
             var limit = state.is_final ? 7 : 4;
             if ((state.p1 >= limit || state.p2 >= limit) && Math.abs(state.p1 - state.p2) >= 2) finishGame();
-        }
+        }}
 
         function finishGame() {{
             var side = (state.current_game_serves > 0) ? "S" : "R";
@@ -228,7 +227,7 @@ html_code = f"""
             state.p1 = 0; state.p2 = 0; state.current_game_serves = 0;
             var win_limit = Math.ceil(state.match_type / 2);
             if(state.g1 >= win_limit || state.g2 >= win_limit) state.is_final = false;
-        }
+        }}
 
         function undo() {{ if(stack.length > 0) {{ state = JSON.parse(stack.pop()); render(); }} }}
 
