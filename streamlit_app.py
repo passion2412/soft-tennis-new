@@ -178,15 +178,18 @@ html_code = f"""
 
         function init() {{
             var area = document.getElementById('button-area');
-            wins.forEach(function(w, i) {{
+            for(var i=0; i<wins.length; i++) {{
+                var w = wins[i];
                 var l = loss[i];
-                var bW = document.createElement('button'); bW.className='btn btn-win'; bW.innerText=w; bW.onclick=function(){{count(w,true)}};
-                var bL = document.createElement('button'); bL.className='btn btn-loss'; bL.innerText=l; bL.onclick=function(){{count(l,false)}};
-                area.appendChild(bW); area.appendChild(bL);
-                state.stats.p1[w]=0; state.stats.p1[l]=0; 
-                state.stats.p2[w]=0; state.stats.p2[l]=0;
-                state.stats.opp[w]=0; state.stats.opp[l]=0;
-            }});
+                (function(winLabel, lossLabel) {{
+                    var bW = document.createElement('button'); bW.className='btn btn-win'; bW.innerText=winLabel; bW.onclick=function(){{count(winLabel,true)}};
+                    var bL = document.createElement('button'); bL.className='btn btn-loss'; bL.innerText=lossLabel; bL.onclick=function(){{count(lossLabel,false)}};
+                    area.appendChild(bW); area.appendChild(bL);
+                    state.stats.p1[winLabel]=0; state.stats.p1[lossLabel]=0; 
+                    state.stats.p2[winLabel]=0; state.stats.p2[lossLabel]=0;
+                    state.stats.opp[winLabel]=0; state.stats.opp[lossLabel]=0;
+                }})(w, l);
+            }}
             state.stats.p1['ネットイン']=0; state.stats.p2['ネットイン']=0; state.stats.opp['ネットイン']=0;
             render();
         }}
@@ -266,16 +269,19 @@ html_code = f"""
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+"</td><td>"+s2_pct+"</td><td>-</td></tr>";
             var items = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ネットイン', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
-            items.forEach(function(item) {{
+            
+            for(var j=0; j<items.length; j++) {{
+                var item = items[j];
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
-            }});
+            }}
             document.getElementById('stats-body').innerHTML = rows;
 
             var h = "";
-            state.history.forEach(function(obj, i) {{ 
+            for(var k=0; k<state.history.length; k++) {{
+                var obj = state.history[k];
                 var label = obj.side === "S" ? '<span class="srv-mark">S</span>' : '<span class="srv-mark" style="color:#666;">R</span>';
-                h += '<div class="history-item">G'+(i+1)+': '+label+obj.score+'</div>'; 
-            }});
+                h += '<div class="history-item">G'+(k+1)+': '+label+obj.score+'</div>'; 
+            }}
             document.getElementById('history-area').innerHTML = h || 'なし';
 
             var memo = document.getElementById('match-memo').value;
