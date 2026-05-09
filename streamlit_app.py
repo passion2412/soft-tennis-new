@@ -24,7 +24,6 @@ pwa_head_tags = """
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 """
 
-# HTML/JavaScriptのコード。f-stringを使っているため、JSの波括弧は {{ }} にしています。
 html_code = f"""
 <!DOCTYPE html>
 <html lang="ja">
@@ -130,7 +129,7 @@ html_code = f"""
             <button class="undo-btn" onclick="undo()">↩ 戻る</button>
         </div>
 
-        <textarea id="match-memo" placeholder="試合のメモ（ここに入力するとレポートに反映されます）" oninput="render()"></textarea>
+        <textarea id="match-memo" placeholder="試合のメモ" oninput="render()"></textarea>
     </div>
 
     <div class="report-card">
@@ -267,17 +266,22 @@ html_code = f"""
             
             var rows = "<tr><td>1st成功率</td><td>"+s1_pct+"</td><td>"+s2_pct+"</td><td>-</td></tr>";
             var items = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ネットイン', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
-            items.forEach(item => {{
+            items.forEach(function(item) {{
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
             }});
             document.getElementById('stats-body').innerHTML = rows;
 
             var h = "";
-            state.history.forEach((obj, i) => {{ 
+            state.history.forEach(function(obj, i) {{ 
                 var label = obj.side === "S" ? '<span class="srv-mark">S</span>' : '<span class="srv-mark" style="color:#666;">R</span>';
                 h += '<div class="history-item">G'+(i+1)+': '+label+obj.score+'</div>'; 
             }});
             document.getElementById('history-area').innerHTML = h || 'なし';
+
+            var memo = document.getElementById('match-memo').value;
+            var memoDisp = document.getElementById('report-memo-display');
+            if(memo) {{ memoDisp.innerText = memo; memoDisp.style.display = 'block'; }}
+            else {{ memoDisp.style.display = 'none'; }}
         }}
         init();
     </script>
