@@ -24,7 +24,6 @@ pwa_head_tags = """
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 """
 
-# HTML/JavaScriptのコード。f-stringを使っているため、JSの波括弧は {{ }} にしています。
 html_code = f"""
 <!DOCTYPE html>
 <html lang="ja">
@@ -41,7 +40,6 @@ html_code = f"""
         }}
         .srv-stats-area {{ text-align: left; font-size: 10px; line-height: 1.3; }}
         .srv-item {{ margin-bottom: 4px; color: #bbb; }}
-        .srv-item.active {{ color: #FFD700; font-weight: bold; }}
         .srv-val {{ font-size: 11px; color: white; }}
         .score-center {{ text-align: center; width: 100%; }}
         .main-score {{ font-size: 42px; font-weight: 900; line-height: 1; margin: 0; }}
@@ -78,7 +76,7 @@ html_code = f"""
         
         table {{ width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }}
         th, td {{ border: 1px solid #ddd; padding: 4px 2px; text-align: center; }}
-        .total-row {{ background: #f9f9f9; font-weight: bold; font-size: 11px; }}
+        .srv-num {{ font-size: 9px; color: #666; display: block; }}
         
         .history-section {{ border-top: 1px dashed #ccc; padding: 10px 0; margin-bottom: 10px; }}
         .history-label {{ font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; text-align: center; }}
@@ -260,12 +258,18 @@ html_code = f"""
             document.getElementById('s2-pct').innerText = s2_pct;
             document.getElementById('s2-cnt').innerText = "(" + state.serve.p2_in + "/" + state.serve.p2_total + ")";
             
+            // レポート表示の更新
             document.getElementById('rep-match-name').innerText = state.match_n;
             document.getElementById('final-gms').innerText = state.g1 + " — " + state.g2;
             document.getElementById('final-names').innerText = state.p1_n + " ・ " + state.p2_n + " vs " + state.opp_n;
             document.getElementById('stats-head').innerHTML = "<tr><th>項目</th><th>"+state.p1_n+"</th><th>"+state.p2_n+"</th><th>相手</th></tr>";
             
-            var rows = "<tr><td>1st成功率</td><td>"+s1_pct+"</td><td>"+s2_pct+"</td><td>-</td></tr>";
+            // 1stサーブの統計行を「確率(成功/合計)」の形式に修正
+            var rows = "<tr><td>1st成功率</td>" + 
+                       "<td>" + s1_pct + " <span class='srv-num'>(" + state.serve.p1_in + "/" + state.serve.p1_total + ")</span></td>" + 
+                       "<td>" + s2_pct + " <span class='srv-num'>(" + state.serve.p2_in + "/" + state.serve.p2_total + ")</span></td>" + 
+                       "<td>-</td></tr>";
+            
             var items = ['サービスエース', 'レシーブエース', 'ストローク', 'ボレー', 'スマッシュ', 'ネットイン', 'ダブルフォルト', 'レシーブミス', 'ストロークミス', 'ボレーミス', 'スマッシュミス'];
             items.forEach(item => {{
                 rows += "<tr><td>"+item+"</td><td>"+(state.stats.p1[item]||0)+"</td><td>"+(state.stats.p2[item]||0)+"</td><td>"+(state.stats.opp[item]||0)+"</td></tr>";
@@ -278,6 +282,16 @@ html_code = f"""
                 h += '<div class="history-item">G'+(i+1)+': '+label+obj.score+'</div>'; 
             }});
             document.getElementById('history-area').innerHTML = h || 'なし';
+
+            // メモの表示
+            var memoVal = document.getElementById('match-memo').value;
+            var memoDisp = document.getElementById('report-memo-display');
+            if(memoVal.trim() !== "") {{
+                memoDisp.innerText = memoVal;
+                memoDisp.style.display = "block";
+            }} else {{
+                memoDisp.style.display = "none";
+            }}
         }}
         init();
     </script>
